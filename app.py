@@ -1,4 +1,5 @@
 import json
+import sys
 
 from flask import Flask, jsonify, request
 import pandas as pd
@@ -7,18 +8,45 @@ from flask_cors import CORS
 from Ashare import get_price
 from SimulatedClock import SimulatedClock
 from train_model import TrainModel
+from flask_sqlalchemy import SQLAlchemy
+
+from tushare_interface import TushareInterface
+
+WIN = sys.platform.startswith('win')
+if WIN:  # 如果是 Windows 系统，使用三个斜线
+    prefix = 'sqlite:///'
+else:  # 否则使用四个斜线
+    prefix = 'sqlite:////'
 
 app = Flask(__name__)
-
+app.config['SQLALCHEMY_DATABASE_URI'] = prefix + os.path.join(app.root_path, './data.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # 关闭对模型修改的监控
+# 在扩展类实例化前加载配置
+db = SQLAlchemy(app)
+CORS(app)  # 添加这一行来启用 CORS 支持
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 # 数据存储路径
 
-@app.route('/time_share_data/<code>', methods=['GET'])
-def get_time_share_data(code):
+class MonitorStocks(db.Model):
+    # 将 stock_code 设置为主键
+    stock_code = db.Column(db.String(10), unique=True, nullable=False, primary_key=True)  # 设置为主键
+    # 描述字段
+    name = db.Column(db.String(20))
+
+    def __repr__(self):
+        return f"<MonitorStocks(stock_code={self.stock_code}, description={self.name})>"
+
+
+@app.route('/time_share_data/<name>', methods=['GET'])
+def get_time_share_data(name):
     try:
-        df = get_price(code, frequency='1m', count=241)
+        tushare_interface = TushareInterface()
+        stock_code = tushare_interface.get_code_by_name(name)
+        if stock_code is None:
+            return jsonify({"message": f"Stock with name {name} not exists."}), 400
+        df = get_price(stock_code, frequency='1m', count=241)
         # 如果数据为空，返回400错误
         if df.empty:
             return jsonify({"error": "No time share data available"}), 400
@@ -46,9 +74,13 @@ def get_time_share_data(code):
 
 
 # 开始训练接口
-@app.route('/start_train/<code>', methods=['POST'])
-def start_train(code):
+@app.route('/start_train/<name>', methods=['POST'])
+def start_train(name):
     try:
+        tushare_interface = TushareInterface()
+        stock_code = tushare_interface.get_code_by_name(name)
+        if stock_code is None:
+            return jsonify({"message": f"Stock with name {name} not exists."}), 400
         # 从请求体中获取开始时间和结束时间
         request_data = request.get_json()
         start_time = request_data.get("start_time")
@@ -59,34 +91,38 @@ def start_train(code):
             return jsonify({"error": "Start time and end time are required"}), 400
 
         # 模拟训练逻辑
-        print(f"开始训练，股票代码：{code}")
+        print(f"开始训练，股票代码：{stock_code}")
         print(f"开始时间：{start_time}, 结束时间：{end_time}")
         train_model = TrainModel()
-        train_model.save_data(code, start_time, end_time, action)
+        train_model.save_data(stock_code, start_time, end_time, action)
         train_model.retrain_with_all_data()
         # 训练逻辑可以包括数据过滤、模型训练等
         # 示例: 根据时间范围过滤数据
         # filtered_data = filter_data_by_time_range(code, start_time, end_time)
 
         # 返回训练成功的消息
-        return jsonify({"message": f"Training started for stock {code} from {start_time} to {end_time}"}), 200
+        return jsonify({"message": f"Training started for stock {stock_code} from {start_time} to {end_time}"}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/playback_sell_point/<code>', methods=['POST'])
-def sell_point_playback(code):
+@app.route('/playback_sell_point/<name>', methods=['POST'])
+def sell_point_playback(name):
+    tushare_interface = TushareInterface()
+    stock_code = tushare_interface.get_code_by_name(name)
+    if stock_code is None:
+        return jsonify({"message": f"Stock with name {name} not exists."}), 400
     train_model = TrainModel()
     train_model.retrain_with_all_data()
-    train_model.save_data2(code, 500)
+    train_model.save_data2(stock_code, 500)
     clock = SimulatedClock()
     time = clock.get_current_time()
     sell_points = []
     while not clock.is_time_to_end():
         print(time)
-        df = train_model.get_time_series_data('%s.csv' % code, time, 200)
-        sell_point = train_model.code_sell_point_use_date(df, code)
+        df = train_model.get_time_series_data('%s.csv' % stock_code, time, 200)
+        sell_point = train_model.code_sell_point_use_date(df, stock_code)
         if sell_point is not None:
             sell_points.append(sell_point)
         time = clock.next()
@@ -94,6 +130,76 @@ def sell_point_playback(code):
     return jsonify(sell_points)
 
 
+@app.route('/add_stock/<name>', methods=['POST'])
+def add_stock(name):
+    # 假设股票代码是通过某种方式获取的，例如通过 API 或静态列表
+    # 这里我们假设股票代码是固定的，实际中你应该从外部数据源或API查询。
+    tushare_interface = TushareInterface()
+    stock_code = tushare_interface.get_code_by_name(name)
+    if stock_code is None:
+        return jsonify({"message": f"Stock with name {name} not exists."}), 400
+    print(stock_code)
+
+    # 检查数据库中是否已存在该股票代码
+    existing_stock = MonitorStocks.query.filter_by(stock_code=stock_code).first()
+    if existing_stock:
+        return jsonify({"message": f"Stock with name {name} already exists."}), 400
+
+    # 创建新的 MonitorStocks 实例
+    new_stock = MonitorStocks(stock_code=stock_code, name=name)
+
+    # 将新股票保存到数据库
+    db.session.add(new_stock)
+    db.session.commit()
+
+    # 返回保存成功的结果
+    return jsonify({
+        "message": "Stock added successfully.",
+        "stock_code": new_stock.stock_code,
+        "name": new_stock.name
+    }), 201
+
+
+# 删除股票接口
+@app.route('/delete_stock/<code>', methods=['DELETE'])
+def delete_stock(code):
+    # 查找要删除的股票
+
+    stock = MonitorStocks.query.filter_by(stock_code=code).first()
+    # 如果没有找到该股票，则返回错误信息
+    if not stock:
+        return jsonify({"error": "Stock not found"}), 404
+
+    # 删除该股票
+    db.session.delete(stock)
+    db.session.commit()
+
+    return jsonify({"message": f"Stock {code} deleted successfully"}), 200
+
+
+@app.route('/get_all_stocks', methods=['GET'])
+def get_all_stocks():
+    # 查询所有股票记录
+    stocks = MonitorStocks.query.all()
+
+    # 将结果转换为字典列表
+    stocks_list = []
+    for stock in stocks:
+        stocks_list.append({
+            'stock_code': stock.stock_code,
+            'name': stock.name
+        })
+
+    # 返回所有股票数据
+    return jsonify(stocks_list)
+
+
+# with app.app_context():
+#     db.drop_all()  # This will delete everything
+#     print('11111')
+#     db.create_all()
+#     print('22222')
+
 if __name__ == "__main__":
     # 启动 Flask 应用
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5001)
