@@ -129,8 +129,8 @@ def sell_point_playback(name):
     time = clock.get_current_time()
     sell_points = []
     while not clock.is_time_to_end():
-        if clock.count < 10:
-            clock.count = 10
+        if clock.count < 20:
+            clock.count = 20
         df = train_model.get_time_series_data('%s.csv' % stock_code, time, clock.count)
         sell_point = train_model.code_sell_point_use_date(df, stock_code)
         if sell_point is not None:
