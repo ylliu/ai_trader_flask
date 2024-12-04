@@ -8,6 +8,7 @@ import requests
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import MinMaxScaler
 from Ashare import get_price
+from tushare_interface import TushareInterface
 
 
 class TrainModel:
@@ -156,7 +157,7 @@ class TrainModel:
             # 只显示预测为卖点（Sell_Point = 1）的记录
             sell_points = data_test[data_test['Predicted_Sell_Point'] == 1]
             # 打印时间、卖点预测值和实际标签
-            # print(sell_points[['time', 'Predicted_Sell_Point']].reset_index())
+            print(sell_points[['time', 'Predicted_Sell_Point']].reset_index())
             sell_point_time = data_test['time'].iloc[-1]
             return sell_point_time
         return None
@@ -358,3 +359,17 @@ class TrainModel:
 
     def load_model(self):
         self.loaded_model = pickle.load(open(self.sell_model_file, 'rb'))
+
+    def select_count(self):
+        df = get_price('sz300001', frequency='1m', count=241)
+        last_index = df.index[-1]
+        df = df.drop(last_index)
+        df.index.name = 'time'
+        df = df.reset_index()
+        tushare_interface = TushareInterface()
+        date = tushare_interface.find_nearest_trading_day(tushare_interface.get_today_date())
+        print(date)
+        s = date.strftime('%Y-%m-%d')
+        threshold = pd.to_datetime('%s 09:30:00' % s)
+        filtered_df = df[df['time'] >= threshold]
+        return len(filtered_df)

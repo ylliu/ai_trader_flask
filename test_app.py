@@ -8,7 +8,8 @@ class Test(TestCase):
         get_time_share_data('sh600628')
 
     def test_sell_point_playback(self):
-        sell_point_playback('sz300001')
+        with app.app_context():
+            sell_point_playback('实丰文化')
 
     def test_add_stock(self):
         with app.app_context():

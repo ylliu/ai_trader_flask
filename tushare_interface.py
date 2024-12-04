@@ -574,8 +574,18 @@ class TushareInterface(DataInterfaceBase):
     def get_code_by_name(self, name):
         pro = ts.pro_api()
         df = pro.stock_basic(name=name)
-        if len(df)==0:
+        if len(df) == 0:
             return None
         code = self.convert_stock_code(df['ts_code'].iloc[0])
         return code
 
+    def get_code_by_name2(self, name):
+        pro = ts.pro_api()
+        df = pro.stock_basic(name=name)
+        if len(df) == 0:
+            return None
+        return df['ts_code'].iloc[0]
+
+    def get_pre_close(self, code):
+        daily_line = self.gat_realtime_data(code)
+        return daily_line.average_price

@@ -44,9 +44,12 @@ def get_time_share_data(name):
     try:
         tushare_interface = TushareInterface()
         stock_code = tushare_interface.get_code_by_name(name)
+        pre_close = tushare_interface.get_pre_close(tushare_interface.get_code_by_name2(name))
         if stock_code is None:
             return jsonify({"message": f"Stock with name {name} not exists."}), 400
-        df = get_price(stock_code, frequency='1m', count=241)
+        train_model = TrainModel()
+        select_count = train_model.select_count()
+        df = get_price(stock_code, frequency='1m', count=select_count)
         # 如果数据为空，返回400错误
         if df.empty:
             return jsonify({"error": "No time share data available"}), 400
@@ -67,7 +70,12 @@ def get_time_share_data(name):
         # with open(json_file_path, 'r') as json_file:
         #     result = json.load(json_file)
         # 返回 JSON 格式的结果
-        return jsonify(result)
+        response = {
+            "pre_close": pre_close,
+            "data": result
+        }
+
+        return jsonify(response)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -116,12 +124,14 @@ def sell_point_playback(name):
     train_model = TrainModel()
     train_model.retrain_with_all_data()
     train_model.save_data2(stock_code, 500)
-    clock = SimulatedClock()
+    select_count = train_model.select_count()
+    clock = SimulatedClock(code=stock_code, point_count=select_count)
     time = clock.get_current_time()
     sell_points = []
     while not clock.is_time_to_end():
-        print(time)
-        df = train_model.get_time_series_data('%s.csv' % stock_code, time, 200)
+        if clock.count < 10:
+            clock.count = 10
+        df = train_model.get_time_series_data('%s.csv' % stock_code, time, clock.count)
         sell_point = train_model.code_sell_point_use_date(df, stock_code)
         if sell_point is not None:
             sell_points.append(sell_point)
