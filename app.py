@@ -1,5 +1,7 @@
 import json
 import sys
+import time
+from threading import Thread, Event
 
 from flask import Flask, jsonify, request
 import pandas as pd
@@ -25,6 +27,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # 关闭对模型修改的
 db = SQLAlchemy(app)
 CORS(app)  # 添加这一行来启用 CORS 支持
 CORS(app, resources={r"/*": {"origins": "*"}})
+stop_event = Event()
+monitor_thread = None
 
 
 # 数据存储路径
@@ -132,7 +136,7 @@ def sell_point_playback(name):
         if clock.count < 20:
             clock.count = 20
         df = train_model.get_time_series_data('%s.csv' % stock_code, time, clock.count)
-        sell_point = train_model.code_sell_point_use_date(df, stock_code)
+        sell_point = train_model.code_sell_point_use_date(df, stock_code, False)
         if sell_point is not None:
             sell_points.append(sell_point)
         time = clock.next()
@@ -202,6 +206,54 @@ def get_all_stocks():
 
     # 返回所有股票数据
     return jsonify(stocks_list)
+
+
+def monitor_stocks():
+    with app.app_context():
+        train_model = TrainModel()
+        train_model.retrain_with_all_data()
+        stocks = MonitorStocks.query.all()
+        while not stop_event.is_set():
+            for stock in stocks:
+                print("code:", stock.stock_code)
+                # 在这里添加监控逻辑
+                df = get_price(stock.stock_code, frequency='1m', count=train_model.select_count())
+                last_index = df.index[-1]
+                df = df.drop(last_index)
+                df.index.name = 'time'
+                # 重命名列
+                df.rename(columns={'close': 'Price', 'volume': 'Volume'}, inplace=True)
+                df.reset_index()
+                train_model.code_sell_point_use_date(df, stock.name, True)
+            time.sleep(1)
+
+
+@app.route('/start_monitor', methods=['POST'])
+def start_monitor():
+    global monitor_thread
+
+    # 如果监控线程已经存在，返回已启动的消息
+    if monitor_thread is not None and monitor_thread.is_alive():
+        return jsonify({"message": "股票监控已启动"}), 200
+
+    # 创建并启动监控线程
+    stop_event.clear()  # 确保停止事件被清除
+    monitor_thread = Thread(target=monitor_stocks)
+    monitor_thread.start()
+
+    return jsonify({"message": "股票监控已启动"}), 200
+
+
+@app.route('/stop_monitor', methods=['POST'])
+def stop_monitor():
+    global monitor_thread
+    stop_event.set()  # 设置停止事件，指示线程停止监控
+
+    if monitor_thread is not None:
+        monitor_thread.join()  # 等待线程结束
+        monitor_thread = None  # 重置监控线程
+
+    return jsonify({"message": "股票监控已停止"}), 200
 
 
 # with app.app_context():

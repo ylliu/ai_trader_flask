@@ -133,7 +133,7 @@ class TrainModel:
 
         y_pred = self.load_model_predict(X_test)
         if y_pred[-1] == 1:
-            self.send_message_to_wechat(code)
+            self.send_message_to_dingding(code)
         # print(y_test)
         # 输出预测结果与对应的时间
         data_test['Predicted_Sell_Point'] = y_pred  # 将预测的卖点添加到数据中
@@ -144,14 +144,34 @@ class TrainModel:
         print('code:', code)
         print(sell_points[['time', 'Predicted_Sell_Point']].reset_index())
 
-    def code_sell_point_use_date(self, data_input, code):
+    def code_sell_point_use_date(self, data_input, code, is_send_message):
 
         data_test = self.data_convert2(data_input)
         # 输入特征和目标变量
         X_test = data_test[self.features]
         y_pred = self.load_model_predict(X_test)
         if y_pred[-1] == 1:
-            self.send_message_to_wechat(code)
+            if is_send_message is True:
+                self.send_message_to_dingding(code)
+            # print('code:', code)
+            data_test['Predicted_Sell_Point'] = y_pred  # 将预测的卖点添加到数据中
+            # 只显示预测为卖点（Sell_Point = 1）的记录
+            sell_points = data_test[data_test['Predicted_Sell_Point'] == 1]
+            # 打印时间、卖点预测值和实际标签
+            print(sell_points[['time', 'Predicted_Sell_Point']].reset_index())
+            sell_point_time = data_test['time'].iloc[-1]
+            return sell_point_time
+        return None
+
+    def code_sell_point_use_date(self, data_input, code, is_send_message):
+
+        data_test = self.data_convert2(data_input)
+        # 输入特征和目标变量
+        X_test = data_test[self.features]
+        y_pred = self.load_model_predict(X_test)
+        if y_pred[-1] == 1:
+            if is_send_message is True:
+                self.send_message_to_dingding(code)
             # print('code:', code)
             data_test['Predicted_Sell_Point'] = y_pred  # 将预测的卖点添加到数据中
             # 只显示预测为卖点（Sell_Point = 1）的记录
@@ -173,7 +193,7 @@ class TrainModel:
 
         y_pred = self.load_model_predict(X_test)
         if y_pred[-1] == 1:
-            self.send_message_to_wechat(csv_file)
+            self.send_message_to_dingding(csv_file)
         # print(y_test)
         # 输出预测结果与对应的时间
         data_test['Predicted_Sell_Point'] = y_pred  # 将预测的卖点添加到数据中
@@ -218,12 +238,12 @@ class TrainModel:
         df.to_csv(csv_file_path, index=True)  # index=False表示不保存DataFrame的索引
         print(f'数据已保存至 {csv_file_path}')
 
-    def send_message_to_wechat(self, code):
+    def send_message_to_dingding(self, code):
         # 你的Server酱API密钥
-        SCKEY = 'SCT205498TVznAyJOnylNd4bE42tWSz3mp'
+        SCKEY = 'SCT264646TimdMu3Bib84f7EJ52Ay06ydD'
 
         # 发送消息到钉钉的URL
-        url = f'https://sctapi.ftqq.com/{SCKEY}.send?channel=9'
+        url = f'https://sctapi.ftqq.com/{SCKEY}.send?channel=2'
 
         # 要发送的消息内容，你可以根据Server酱的文档来格式化这个JSON
         # 这里只是一个简单的示例
@@ -238,10 +258,10 @@ class TrainModel:
         print(response.text)
 
     def send_message2_wechat(self, title):
-        SCKEY = 'SCT205498TVznAyJOnylNd4bE42tWSz3mp'
+        SCKEY = 'SCT264646TimdMu3Bib84f7EJ52Ay06ydD'
 
         # 发送消息到钉钉的URL
-        url = f'https://sctapi.ftqq.com/{SCKEY}.send?channel=9'
+        url = f'https://sctapi.ftqq.com/{SCKEY}.send?channel=2'
 
         # 要发送的消息内容，你可以根据Server酱的文档来格式化这个JSON
         # 这里只是一个简单的示例
@@ -324,7 +344,7 @@ class TrainModel:
 
         y_pred = self.load_buy_model_predict(X_test)
         if y_pred[-1] == 1:
-            self.send_message_to_wechat(code)
+            self.send_message_to_dingding(code)
         # print(y_test)
         # 输出预测结果与对应的时间
         point = 'Predicted_Buy_Point'
