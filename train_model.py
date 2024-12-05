@@ -15,7 +15,7 @@ class TrainModel:
     def __init__(self):
         self.loaded_model = None
         self.sell_model_file = None
-        self.features = ['Price', 'Volume', 'SMA5', 'Price_change', 'Volume_change']
+        self.features = ['Price', 'Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change']
         self.BUY_POINT = "Buy_Point"
         self.SELL_POINT = "Sell_Point"
         self.buy_model_file = None
@@ -55,6 +55,7 @@ class TrainModel:
 
         # 添加简单的移动平均线作为特征
         data['SMA5'] = data['Price'].rolling(window=5).mean()
+        data['SMA10'] = data['Price'].rolling(window=10).mean()
         # 添加价格变化率
         data['Price_change'] = data['Price'].pct_change()
         data['Price_change'] = data['Price_change'].replace([np.inf, -np.inf], 0)
@@ -75,6 +76,7 @@ class TrainModel:
 
         # 添加简单的移动平均线作为特征
         data['SMA5'] = data['Price'].rolling(window=5).mean()
+        data['SMA10'] = data['Price'].rolling(window=10).mean()
         # 添加价格变化率
         data['Price_change'] = data['Price'].pct_change()
         data['Price_change'] = data['Price_change'].replace([np.inf, -np.inf], 0)

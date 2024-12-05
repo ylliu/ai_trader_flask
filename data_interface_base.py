@@ -63,9 +63,14 @@ class DataInterfaceBase:
         """
         if today is None:
             today = datetime.now().date()
+        current_time = datetime.now()
+        current_date = datetime.strptime(today, '%Y%m%d')
+        if current_time.hour < 9 or (current_time.hour == 9 and current_time.minute < 30):
+            current_date -= timedelta(days=1)
 
             # 向前查找直到找到交易日
-        current_date = datetime.strptime(today, '%Y%m%d')
+
+
         while not self.is_a_stock_trading_day(current_date):
             current_date -= timedelta(days=1)
 

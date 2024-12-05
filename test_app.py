@@ -5,7 +5,8 @@ from app import get_time_share_data, sell_point_playback, add_stock, app, delete
 
 class Test(TestCase):
     def test_get_time_share_data(self):
-        get_time_share_data('sh600628')
+        with app.app_context():
+            get_time_share_data('实丰文化')
 
     def test_sell_point_playback(self):
         with app.app_context():
