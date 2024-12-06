@@ -6,11 +6,11 @@ from app import get_time_share_data, sell_point_playback, add_stock, app, delete
 class Test(TestCase):
     def test_get_time_share_data(self):
         with app.app_context():
-            get_time_share_data('实丰文化')
+            df = get_time_share_data('双林股份')
 
     def test_sell_point_playback(self):
         with app.app_context():
-            sell_point_playback('实丰文化')
+            sell_point_playback('双林股份')
 
     def test_add_stock(self):
         with app.app_context():

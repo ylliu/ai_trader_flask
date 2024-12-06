@@ -83,7 +83,6 @@ class TrainModel:
         # 添加成交量变化率
         data['Volume_change'] = data['Volume'].pct_change()
         data['Volume_change'] = data['Volume_change'].replace([np.inf, -np.inf], 0)
-
         # 去除空值
         data.dropna(inplace=True)
         return data
@@ -229,7 +228,6 @@ class TrainModel:
 
     def save_data2(self, code, size):
         df = get_price(code, frequency='1m', count=size)  # 支持'1m','5m','15m','30m','60m'
-        print(df)
         last_index = df.index[-1]
         df = df.drop(last_index)
         df.index.name = 'time'
@@ -361,7 +359,6 @@ class TrainModel:
     def get_time_series_data(self, file_name, target_time, time_window_minutes=60):
         # 读取 CSV 文件
         df = pd.read_csv(file_name)
-
         # 将 'time' 列转换为 datetime 格式
         target_time = datetime.strftime(target_time, '%Y-%m-%d %H:%M:%S')
         # 确保目标时间存在于数据中
@@ -373,9 +370,9 @@ class TrainModel:
 
         # 计算60条数据的起始索引
         start_index = max(target_index - time_window_minutes + 1, 0)
-
+        cols_needed = ['time', 'open', 'Price', 'high', 'low', 'Volume']
         # 获取从目标时间前60条数据
-        result_df = df.iloc[start_index:target_index + 1]
+        result_df = df.loc[start_index:target_index + 1, cols_needed]
 
         return result_df
 

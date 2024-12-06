@@ -63,6 +63,7 @@ def get_time_share_data(name):
         df = df.reset_index()
         df['time'] = df['time'].apply(lambda x: x.timestamp())
         print(df)
+        print(df['low'].min())
         # 选择要返回的列（time, open, close, high, low, volume）
         result = df[['time', 'open', 'close', 'high', 'low', 'volume']].reset_index().to_dict(orient='records')
         # json_file_path = f'{code}_time_share_data.json'
@@ -131,6 +132,7 @@ def sell_point_playback(name):
     select_count = train_model.select_count()
     clock = SimulatedClock(code=stock_code, point_count=select_count)
     time = clock.get_current_time()
+    print(time)
     sell_points = []
     while not clock.is_time_to_end():
         if clock.count < 20:
@@ -254,6 +256,13 @@ def stop_monitor():
         monitor_thread = None  # 重置监控线程
 
     return jsonify({"message": "股票监控已停止"}), 200
+
+
+@app.route('/monitor_status', methods=['GET'])
+def monitor_status():
+    # 使用一个布尔值直接表示监控状态
+    is_monitoring = monitor_thread is not None
+    return jsonify({"isMonitoring": is_monitoring}), 200
 
 
 # with app.app_context():
