@@ -78,12 +78,13 @@ class TrainModel:
         data['SMA5'] = data['Price'].rolling(window=5).mean()
         data['SMA10'] = data['Price'].rolling(window=10).mean()
         # 添加价格变化率
-        data['Price_change'] = data['Price'].pct_change()
+        data['Price_change'] = data['Price'].pct_change().fillna(0)
         data['Price_change'] = data['Price_change'].replace([np.inf, -np.inf], 0)
         # 添加成交量变化率
-        data['Volume_change'] = data['Volume'].pct_change()
+        data['Volume_change'] = data['Volume'].pct_change().fillna(0)
         data['Volume_change'] = data['Volume_change'].replace([np.inf, -np.inf], 0)
         # 去除空值
+        # print(data)
         data.dropna(inplace=True)
         return data
 
