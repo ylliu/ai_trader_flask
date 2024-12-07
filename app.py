@@ -146,6 +146,31 @@ def sell_point_playback(name):
     return jsonify(sell_points)
 
 
+@app.route('/playback_buy_point/<name>', methods=['POST'])
+def buy_point_playback(name):
+    tushare_interface = TushareInterface()
+    stock_code = tushare_interface.get_code_by_name(name)
+    if stock_code is None:
+        return jsonify({"message": f"Stock with name {name} not exists."}), 400
+    train_model = TrainModel()
+    train_model.retrain_with_all_buy_data()
+    train_model.save_data2(stock_code, 500)
+    select_count = train_model.select_count()
+    clock = SimulatedClock(code=stock_code, point_count=select_count)
+    time = clock.get_current_time()
+    print(time)
+    sell_points = []
+    while not clock.is_time_to_end():
+        if clock.count < 20:
+            clock.count = 20
+        df = train_model.get_time_series_data('%s.csv' % stock_code, time, clock.count)
+        sell_point = train_model.code_buy_point_use_date(df, stock_code, False)
+        if sell_point is not None:
+            sell_points.append(sell_point)
+        time = clock.next()
+
+    return jsonify(sell_points)
+
 @app.route('/add_stock/<name>', methods=['POST'])
 def add_stock(name):
     # 假设股票代码是通过某种方式获取的，例如通过 API 或静态列表

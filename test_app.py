@@ -1,6 +1,7 @@
 from unittest import TestCase
 
-from app import get_time_share_data, sell_point_playback, add_stock, app, delete_stock, get_all_stocks
+from app import get_time_share_data, sell_point_playback, add_stock, app, delete_stock, get_all_stocks, \
+    buy_point_playback
 
 
 class Test(TestCase):
@@ -25,3 +26,7 @@ class Test(TestCase):
             add_stock("")
             res = get_all_stocks()
             print(res.json)
+
+    def test_buy_point_playback(self):
+        with app.app_context():
+            buy_point_playback("神宇股份")

@@ -14,6 +14,7 @@ from tushare_interface import TushareInterface
 class TrainModel:
     def __init__(self):
         self.loaded_model = None
+        self.loaded_buy_model = None
         self.sell_model_file = None
         self.features = ['Price', 'Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change']
         self.BUY_POINT = "Buy_Point"
@@ -100,10 +101,10 @@ class TrainModel:
     def load_test_case(self, file_names):
         self.data = self.load_and_merge_data(file_names)
 
-    def train_model(self):
+    def train_model(self, action):
         # 输入特征和目标变量
         X = self.data[self.features]
-        y = self.data['Sell_Point']  # 卖点标签（1 为卖点，0 为非卖点）
+        y = self.data[action]  # 卖点标签（1 为卖点，0 为非卖点）
         X_train = X
         y_train = y
         # 划分训练集和测试集
@@ -115,12 +116,21 @@ class TrainModel:
         model.fit(X_train, y_train)
 
         # 保存模型到文件
-        self.sell_model_file = 'sell_point_model.pkl'
-        pickle.dump(model, open(self.sell_model_file, 'wb'))
+        if action == self.BUY_POINT:
+            self.buy_model_file = 'buy_point_model.pkl'
+            pickle.dump(model, open(self.buy_model_file, 'wb'))
+        if action == self.SELL_POINT:
+            self.sell_model_file = 'sell_point_model.pkl'
+            pickle.dump(model, open(self.sell_model_file, 'wb'))
 
     def load_model_predict(self, x_input):
         # 使用加载的模型进行预测
         predictions = self.loaded_model.predict(x_input)
+        return predictions
+
+    def load_buy_model_predict(self, x_input):
+        # 使用加载的模型进行预测
+        predictions = self.loaded_buy_model.predict(x_input)
         return predictions
 
     def code_sell_point(self, code):
@@ -301,8 +311,14 @@ class TrainModel:
     def retrain_with_all_data(self):
         file_names = self.get_all_test_csv(self.SELL_POINT)
         self.load_test_case(file_names)
-        self.train_model()
+        self.train_model(self.SELL_POINT)
         self.load_model()
+
+    def retrain_with_all_buy_data(self):
+        file_names = self.get_all_test_csv(self.BUY_POINT)
+        self.load_test_case(file_names)
+        self.train_model(self.BUY_POINT)
+        self.load_buy_model()
 
     def train_with_all_buy_data(self):
         file_names = self.get_all_test_csv(self.BUY_POINT)
@@ -326,12 +342,12 @@ class TrainModel:
         self.buy_model_file = 'buy_point_model.pkl'
         pickle.dump(model, open(self.buy_model_file, 'wb'))
 
-    def load_buy_model_predict(self, x_input):
-        loaded_model = pickle.load(open(self.buy_model_file, 'rb'))
-
-        # 使用加载的模型进行预测
-        predictions = loaded_model.predict(x_input)
-        return predictions
+    # def load_buy_model_predict(self, x_input):
+    #     loaded_model = pickle.load(open(self.buy_model_file, 'rb'))
+    #
+    #     # 使用加载的模型进行预测
+    #     predictions = loaded_model.predict(x_input)
+    #     return predictions
 
     def code_buy_point(self, code):
         test_code = code
@@ -380,6 +396,9 @@ class TrainModel:
     def load_model(self):
         self.loaded_model = pickle.load(open(self.sell_model_file, 'rb'))
 
+    def load_buy_model(self):
+        self.loaded_buy_model = pickle.load(open(self.buy_model_file, 'rb'))
+
     def select_count(self):
         df = get_price('sz300001', frequency='1m', count=241)
         last_index = df.index[-1]
@@ -393,3 +412,21 @@ class TrainModel:
         threshold = pd.to_datetime('%s 09:30:00' % s)
         filtered_df = df[df['time'] >= threshold]
         return len(filtered_df)
+
+    def code_buy_point_use_date(self, data_input, code, is_send_message):
+        data_test = self.data_convert2(data_input)
+        # 输入特征和目标变量
+        X_test = data_test[self.features]
+        y_pred = self.load_buy_model_predict(X_test)
+        if y_pred[-1] == 1:
+            if is_send_message is True:
+                self.send_message_to_dingding(code)
+            # print('code:', code)
+            data_test['Predicted_Buy_Point'] = y_pred  # 将预测的卖点添加到数据中
+            # 只显示预测为买点（Buy_Point = 1）的记录
+            buy_points = data_test[data_test['Predicted_Buy_Point'] == 1]
+            # 打印时间、卖点预测值和实际标签
+            print(buy_points[['time', 'Predicted_Buy_Point']].reset_index())
+            buy_point_time = data_test['time'].iloc[-1]
+            return buy_point_time
+        return None
