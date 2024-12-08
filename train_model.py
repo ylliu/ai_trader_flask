@@ -1,7 +1,7 @@
 import os
 import pickle
 from datetime import datetime, timedelta
-
+import talib  # 用于计算技术指标
 import pandas as pd
 import numpy as np
 import requests
@@ -13,10 +13,10 @@ from tushare_interface import TushareInterface
 
 class TrainModel:
     def __init__(self):
-        self.loaded_model = None
+        self.loaded_sell_model = None
         self.loaded_buy_model = None
         self.sell_model_file = None
-        self.features = ['Price', 'Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change']
+        self.features = ['Price', 'Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change', 'RSI']
         self.BUY_POINT = "Buy_Point"
         self.SELL_POINT = "Sell_Point"
         self.buy_model_file = None
@@ -63,6 +63,7 @@ class TrainModel:
         # 添加成交量变化率
         data['Volume_change'] = data['Volume'].pct_change()
         data['Volume_change'] = data['Volume_change'].replace([np.inf, -np.inf], 0)
+        data['RSI'] = talib.RSI(data['Price'], timeperiod=14)
 
         # 去除空值
         data.dropna(inplace=True)
@@ -84,6 +85,7 @@ class TrainModel:
         # 添加成交量变化率
         data['Volume_change'] = data['Volume'].pct_change().fillna(0)
         data['Volume_change'] = data['Volume_change'].replace([np.inf, -np.inf], 0)
+        data['RSI'] = talib.RSI(data['Price'], timeperiod=14)
         # 去除空值
         # print(data)
         data.dropna(inplace=True)
@@ -123,9 +125,12 @@ class TrainModel:
             self.sell_model_file = 'sell_point_model.pkl'
             pickle.dump(model, open(self.sell_model_file, 'wb'))
 
-    def load_model_predict(self, x_input):
+    def load_model_predict(self, x_input, action):
         # 使用加载的模型进行预测
-        predictions = self.loaded_model.predict(x_input)
+        if action == self.BUY_POINT:
+            predictions = self.loaded_buy_model.predict(x_input)
+        elif action == self.SELL_POINT:
+            predictions = self.loaded_sell_model.predict(x_input)
         return predictions
 
     def load_buy_model_predict(self, x_input):
@@ -156,64 +161,28 @@ class TrainModel:
         print('code:', code)
         print(sell_points[['time', 'Predicted_Sell_Point']].reset_index())
 
-    def code_sell_point_use_date(self, data_input, code, is_send_message):
-
+    def code_trade_point_use_date(self, data_input, name, is_send_message, action):
+        print(action)
+        if action == self.SELL_POINT:
+            point = 'Predicted_Sell_Point'
+        if action == self.BUY_POINT:
+            point = 'Predicted_Buy_Point'
         data_test = self.data_convert2(data_input)
         # 输入特征和目标变量
         X_test = data_test[self.features]
-        y_pred = self.load_model_predict(X_test)
+        y_pred = self.load_model_predict(X_test, action)
         if y_pred[-1] == 1:
             if is_send_message is True:
-                self.send_message_to_dingding(code)
+                self.send_message_to_dingding(name, action)
             # print('code:', code)
-            data_test['Predicted_Sell_Point'] = y_pred  # 将预测的卖点添加到数据中
+
+            data_test[('%s' % point)] = y_pred  # 将预测的卖点添加到数据中
             # 只显示预测为卖点（Sell_Point = 1）的记录
-            sell_points = data_test[data_test['Predicted_Sell_Point'] == 1]
+            trade_points = data_test[data_test[point] == 1]
             # 打印时间、卖点预测值和实际标签
-            print(sell_points[['time', 'Predicted_Sell_Point']].reset_index())
-            sell_point_time = data_test['time'].iloc[-1]
-            return sell_point_time
+            print(trade_points[['time', point]].reset_index())
+            return data_test['time'].iloc[-1]
         return None
-
-    def code_sell_point_use_date(self, data_input, code, is_send_message):
-
-        data_test = self.data_convert2(data_input)
-        # 输入特征和目标变量
-        X_test = data_test[self.features]
-        y_pred = self.load_model_predict(X_test)
-        if y_pred[-1] == 1:
-            if is_send_message is True:
-                self.send_message_to_dingding(code)
-            # print('code:', code)
-            data_test['Predicted_Sell_Point'] = y_pred  # 将预测的卖点添加到数据中
-            # 只显示预测为卖点（Sell_Point = 1）的记录
-            sell_points = data_test[data_test['Predicted_Sell_Point'] == 1]
-            # 打印时间、卖点预测值和实际标签
-            print(sell_points[['time', 'Predicted_Sell_Point']].reset_index())
-            sell_point_time = data_test['time'].iloc[-1]
-            return sell_point_time
-        return None
-
-    def code_sell_point_use_file(self, csv_file):
-
-        data_test = self.data_convert(f'{csv_file}.csv')
-        # 输入特征和目标变量
-        X_test = data_test[self.features]
-
-        # 评估模型
-        from sklearn.metrics import accuracy_score
-
-        y_pred = self.load_model_predict(X_test)
-        if y_pred[-1] == 1:
-            self.send_message_to_dingding(csv_file)
-        # print(y_test)
-        # 输出预测结果与对应的时间
-        data_test['Predicted_Sell_Point'] = y_pred  # 将预测的卖点添加到数据中
-
-        # 只显示预测为卖点（Sell_Point = 1）的记录
-        sell_points = data_test[data_test['Predicted_Sell_Point'] == 1]
-        # 打印时间、卖点预测值和实际标签
-        print(sell_points[['time', 'Predicted_Sell_Point']].reset_index())
 
     def save_data(self, code, sell_start, sell_end, action_type):
         sell_start = datetime.strptime(sell_start, '%Y-%m-%d %H:%M:%S')
@@ -249,7 +218,7 @@ class TrainModel:
         df.to_csv(csv_file_path, index=True)  # index=False表示不保存DataFrame的索引
         print(f'数据已保存至 {csv_file_path}')
 
-    def send_message_to_dingding(self, code):
+    def send_message_to_dingding(self, code, action):
         # 你的Server酱API密钥
         SCKEY = 'SCT264646TimdMu3Bib84f7EJ52Ay06ydD'
 
@@ -258,8 +227,12 @@ class TrainModel:
 
         # 要发送的消息内容，你可以根据Server酱的文档来格式化这个JSON
         # 这里只是一个简单的示例
+        if action == self.BUY_POINT:
+            action_text = "Buy点"
+        if action == self.SELL_POINT:
+            action_text = "Sell点"
         data = {
-            "text": f"code:{code}提示卖点"
+            "text": f"code:{code}提示{action_text}"
         }
 
         # 发送POST请求
@@ -308,11 +281,11 @@ class TrainModel:
         print(csv_files)
         return csv_files
 
-    def retrain_with_all_data(self):
+    def retrain_with_all_sell_data(self):
         file_names = self.get_all_test_csv(self.SELL_POINT)
         self.load_test_case(file_names)
         self.train_model(self.SELL_POINT)
-        self.load_model()
+        self.load_sell_model()
 
     def retrain_with_all_buy_data(self):
         file_names = self.get_all_test_csv(self.BUY_POINT)
@@ -393,8 +366,8 @@ class TrainModel:
 
         return result_df
 
-    def load_model(self):
-        self.loaded_model = pickle.load(open(self.sell_model_file, 'rb'))
+    def load_sell_model(self):
+        self.loaded_sell_model = pickle.load(open(self.sell_model_file, 'rb'))
 
     def load_buy_model(self):
         self.loaded_buy_model = pickle.load(open(self.buy_model_file, 'rb'))
@@ -412,21 +385,3 @@ class TrainModel:
         threshold = pd.to_datetime('%s 09:30:00' % s)
         filtered_df = df[df['time'] >= threshold]
         return len(filtered_df)
-
-    def code_buy_point_use_date(self, data_input, code, is_send_message):
-        data_test = self.data_convert2(data_input)
-        # 输入特征和目标变量
-        X_test = data_test[self.features]
-        y_pred = self.load_buy_model_predict(X_test)
-        if y_pred[-1] == 1:
-            if is_send_message is True:
-                self.send_message_to_dingding(code)
-            # print('code:', code)
-            data_test['Predicted_Buy_Point'] = y_pred  # 将预测的卖点添加到数据中
-            # 只显示预测为买点（Buy_Point = 1）的记录
-            buy_points = data_test[data_test['Predicted_Buy_Point'] == 1]
-            # 打印时间、卖点预测值和实际标签
-            print(buy_points[['time', 'Predicted_Buy_Point']].reset_index())
-            buy_point_time = data_test['time'].iloc[-1]
-            return buy_point_time
-        return None

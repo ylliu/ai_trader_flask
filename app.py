@@ -108,7 +108,7 @@ def start_train(name):
         print(f"开始时间：{start_time}, 结束时间：{end_time}")
         train_model = TrainModel()
         train_model.save_data(stock_code, start_time, end_time, action)
-        train_model.retrain_with_all_data()
+        train_model.retrain_with_all_sell_data()
         # 训练逻辑可以包括数据过滤、模型训练等
         # 示例: 根据时间范围过滤数据
         # filtered_data = filter_data_by_time_range(code, start_time, end_time)
@@ -127,7 +127,7 @@ def sell_point_playback(name):
     if stock_code is None:
         return jsonify({"message": f"Stock with name {name} not exists."}), 400
     train_model = TrainModel()
-    train_model.retrain_with_all_data()
+    train_model.retrain_with_all_sell_data()
     train_model.save_data2(stock_code, 500)
     select_count = train_model.select_count()
     clock = SimulatedClock(code=stock_code, point_count=select_count)
@@ -138,7 +138,7 @@ def sell_point_playback(name):
         if clock.count < 20:
             clock.count = 20
         df = train_model.get_time_series_data('%s.csv' % stock_code, time, clock.count)
-        sell_point = train_model.code_sell_point_use_date(df, stock_code, False)
+        sell_point = train_model.code_trade_point_use_date(df, name, False, train_model.SELL_POINT)
         if sell_point is not None:
             sell_points.append(sell_point)
         time = clock.next()
@@ -159,17 +159,18 @@ def buy_point_playback(name):
     clock = SimulatedClock(code=stock_code, point_count=select_count)
     time = clock.get_current_time()
     print(time)
-    sell_points = []
+    buy_points = []
     while not clock.is_time_to_end():
         if clock.count < 20:
             clock.count = 20
         df = train_model.get_time_series_data('%s.csv' % stock_code, time, clock.count)
-        sell_point = train_model.code_buy_point_use_date(df, stock_code, False)
-        if sell_point is not None:
-            sell_points.append(sell_point)
+        buy_point = train_model.code_trade_point_use_date(df, name, False, train_model.BUY_POINT)
+        if buy_point is not None:
+            buy_points.append(buy_point)
         time = clock.next()
 
-    return jsonify(sell_points)
+    return jsonify(buy_points)
+
 
 @app.route('/add_stock/<name>', methods=['POST'])
 def add_stock(name):
@@ -238,7 +239,8 @@ def get_all_stocks():
 def monitor_stocks():
     with app.app_context():
         train_model = TrainModel()
-        train_model.retrain_with_all_data()
+        train_model.retrain_with_all_sell_data()
+        train_model.retrain_with_all_buy_data()
         stocks = MonitorStocks.query.all()
         while not stop_event.is_set():
             for stock in stocks:
@@ -251,7 +253,8 @@ def monitor_stocks():
                 # 重命名列
                 df.rename(columns={'close': 'Price', 'volume': 'Volume'}, inplace=True)
                 df.reset_index()
-                train_model.code_sell_point_use_date(df, stock.name, True)
+                train_model.code_trade_point_use_date(df, stock.name, True, train_model.SELL_POINT)
+                train_model.code_trade_point_use_date(df, stock.name, True, train_model.BUY_POINT)
             time.sleep(1)
 
 

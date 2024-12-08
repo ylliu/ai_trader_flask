@@ -20,5 +20,4 @@ class TestTrainModel(TestCase):
 
     def test_sell_point_predict(self):
         train_model = TrainModel()
-        train_model.retrain_with_all_buy_data()
-
+        train_model.retrain_with_all_sell_data()
