@@ -16,7 +16,7 @@ class TrainModel:
         self.loaded_sell_model = None
         self.loaded_buy_model = None
         self.sell_model_file = None
-        self.features = ['Price', 'Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change', 'RSI']
+        self.features = ['Price', 'Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change']
         self.BUY_POINT = "Buy_Point"
         self.SELL_POINT = "Sell_Point"
         self.buy_model_file = None
