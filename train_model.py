@@ -1,7 +1,7 @@
 import os
 import pickle
 from datetime import datetime, timedelta
-import talib  # 用于计算技术指标
+# import talib  # 用于计算技术指标
 import pandas as pd
 import numpy as np
 import requests
@@ -63,7 +63,7 @@ class TrainModel:
         # 添加成交量变化率
         data['Volume_change'] = data['Volume'].pct_change()
         data['Volume_change'] = data['Volume_change'].replace([np.inf, -np.inf], 0)
-        data['RSI'] = talib.RSI(data['Price'], timeperiod=14)
+        # data['RSI'] = talib.RSI(data['Price'], timeperiod=14)
 
         # 去除空值
         data.dropna(inplace=True)
@@ -85,7 +85,7 @@ class TrainModel:
         # 添加成交量变化率
         data['Volume_change'] = data['Volume'].pct_change().fillna(0)
         data['Volume_change'] = data['Volume_change'].replace([np.inf, -np.inf], 0)
-        data['RSI'] = talib.RSI(data['Price'], timeperiod=14)
+        # data['RSI'] = talib.RSI(data['Price'], timeperiod=14)
         # 去除空值
         # print(data)
         data.dropna(inplace=True)
