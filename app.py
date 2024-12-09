@@ -255,7 +255,7 @@ def monitor_stocks():
                 df = df.reset_index()
                 train_model.code_trade_point_use_date(df, stock.name, True, train_model.SELL_POINT)
                 train_model.code_trade_point_use_date(df, stock.name, True, train_model.BUY_POINT)
-            time.sleep(1)
+            time.sleep(50)
 
 
 @app.route('/start_monitor', methods=['POST'])
