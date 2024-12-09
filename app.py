@@ -252,7 +252,7 @@ def monitor_stocks():
                 df.index.name = 'time'
                 # 重命名列
                 df.rename(columns={'close': 'Price', 'volume': 'Volume'}, inplace=True)
-                df.reset_index()
+                df = df.reset_index()
                 train_model.code_trade_point_use_date(df, stock.name, True, train_model.SELL_POINT)
                 train_model.code_trade_point_use_date(df, stock.name, True, train_model.BUY_POINT)
             time.sleep(1)

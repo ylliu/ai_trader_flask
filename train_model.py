@@ -162,7 +162,7 @@ class TrainModel:
         print(sell_points[['time', 'Predicted_Sell_Point']].reset_index())
 
     def code_trade_point_use_date(self, data_input, name, is_send_message, action):
-        print(action)
+        # print(action)
         if action == self.SELL_POINT:
             point = 'Predicted_Sell_Point'
         if action == self.BUY_POINT:
