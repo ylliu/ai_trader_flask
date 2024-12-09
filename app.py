@@ -1,6 +1,7 @@
 import json
 import sys
 import time
+from datetime import datetime
 from threading import Thread, Event
 
 from flask import Flask, jsonify, request
@@ -135,8 +136,7 @@ def sell_point_playback(name):
     print(time)
     sell_points = []
     while not clock.is_time_to_end():
-        if clock.count < 20:
-            data_count = 20
+        data_count = max(clock.count, 20)
         df = train_model.get_time_series_data('%s.csv' % stock_code, time, data_count)
         sell_point = train_model.code_trade_point_use_date(df, name, False, train_model.SELL_POINT)
         if sell_point is not None:
@@ -161,9 +161,8 @@ def buy_point_playback(name):
     print(time)
     buy_points = []
     while not clock.is_time_to_end():
-        if clock.count < 20:
-            clock.count = 20
-        df = train_model.get_time_series_data('%s.csv' % stock_code, time, clock.count)
+        data_count = max(clock.count, 20)
+        df = train_model.get_time_series_data('%s.csv' % stock_code, time, data_count)
         buy_point = train_model.code_trade_point_use_date(df, name, False, train_model.BUY_POINT)
         if buy_point is not None:
             buy_points.append(buy_point)
@@ -243,18 +242,21 @@ def monitor_stocks():
         train_model.retrain_with_all_buy_data()
         stocks = MonitorStocks.query.all()
         while not stop_event.is_set():
-            for stock in stocks:
-                print("code:", stock.stock_code)
-                # 在这里添加监控逻辑
-                df = get_price(stock.stock_code, frequency='1m', count=train_model.select_count())
-                last_index = df.index[-1]
-                df = df.drop(last_index)
-                df.index.name = 'time'
-                # 重命名列
-                df.rename(columns={'close': 'Price', 'volume': 'Volume'}, inplace=True)
-                df = df.reset_index()
-                train_model.code_trade_point_use_date(df, stock.name, True, train_model.SELL_POINT)
-                train_model.code_trade_point_use_date(df, stock.name, True, train_model.BUY_POINT)
+            current_time = datetime.now()
+            current_time_str = current_time.strftime('%H:%M')
+            if '09:30' <= current_time_str < '11:30' or '13:00' <= current_time_str < '15:00':
+                for stock in stocks:
+                    print("code:", stock.stock_code)
+                    # 在这里添加监控逻辑
+                    df = get_price(stock.stock_code, frequency='1m', count=train_model.select_count())
+                    last_index = df.index[-1]
+                    df = df.drop(last_index)
+                    df.index.name = 'time'
+                    # 重命名列
+                    df.rename(columns={'close': 'Price', 'volume': 'Volume'}, inplace=True)
+                    df = df.reset_index()
+                    train_model.code_trade_point_use_date(df, stock.name, True, train_model.SELL_POINT)
+                    train_model.code_trade_point_use_date(df, stock.name, True, train_model.BUY_POINT)
             time.sleep(50)
 
 
