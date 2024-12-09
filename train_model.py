@@ -138,29 +138,6 @@ class TrainModel:
         predictions = self.loaded_buy_model.predict(x_input)
         return predictions
 
-    def code_sell_point(self, code):
-        test_code = code
-        self.save_data2(test_code, 200)
-        data_test = self.data_convert(f'{test_code}.csv')
-        # 输入特征和目标变量
-        X_test = data_test[self.features]
-
-        # 评估模型
-        from sklearn.metrics import accuracy_score
-
-        y_pred = self.load_model_predict(X_test)
-        if y_pred[-1] == 1:
-            self.send_message_to_dingding(code)
-        # print(y_test)
-        # 输出预测结果与对应的时间
-        data_test['Predicted_Sell_Point'] = y_pred  # 将预测的卖点添加到数据中
-
-        # 只显示预测为卖点（Sell_Point = 1）的记录
-        sell_points = data_test[data_test['Predicted_Sell_Point'] == 1]
-        # 打印时间、卖点预测值和实际标签
-        print('code:', code)
-        print(sell_points[['time', 'Predicted_Sell_Point']].reset_index())
-
     def code_trade_point_use_date(self, data_input, name, is_send_message, action):
         # print(action)
         if action == self.SELL_POINT:
@@ -173,7 +150,12 @@ class TrainModel:
         y_pred = self.load_model_predict(X_test, action)
         if y_pred[-1] == 1:
             if is_send_message is True:
-                self.send_message_to_dingding(name, action)
+                # 解析日期时间字符串
+                date_time_str = data_test['time'].iloc[-1]
+                date_time_obj = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S")
+                # 提取时分信息
+                time_str = date_time_obj.strftime("%H:%M")
+                self.send_message_to_dingding(name, action, time_str)
             # print('code:', code)
 
             data_test[('%s' % point)] = y_pred  # 将预测的卖点添加到数据中
@@ -218,7 +200,7 @@ class TrainModel:
         df.to_csv(csv_file_path, index=True)  # index=False表示不保存DataFrame的索引
         print(f'数据已保存至 {csv_file_path}')
 
-    def send_message_to_dingding(self, code, action):
+    def send_message_to_dingding(self, name, action, time):
         # 你的Server酱API密钥
         SCKEY = 'SCT264646TimdMu3Bib84f7EJ52Ay06ydD'
 
@@ -232,7 +214,7 @@ class TrainModel:
         if action == self.SELL_POINT:
             action_text = "Sell点"
         data = {
-            "text": f"code:{code}提示{action_text}"
+            "text": f"{time} {name}提示{action_text}"
         }
 
         # 发送POST请求
@@ -321,30 +303,6 @@ class TrainModel:
     #     # 使用加载的模型进行预测
     #     predictions = loaded_model.predict(x_input)
     #     return predictions
-
-    def code_buy_point(self, code):
-        test_code = code
-        self.save_data2(test_code, 241)
-        data_test = self.data_convert(f'{test_code}.csv')
-        # 输入特征和目标变量
-        X_test = data_test[self.features]
-
-        # 评估模型
-        from sklearn.metrics import accuracy_score
-
-        y_pred = self.load_buy_model_predict(X_test)
-        if y_pred[-1] == 1:
-            self.send_message_to_dingding(code)
-        # print(y_test)
-        # 输出预测结果与对应的时间
-        point = 'Predicted_Buy_Point'
-        data_test[('%s' % point)] = y_pred  # 将预测的卖点添加到数据中
-
-        # 只显示预测为卖点（Sell_Point = 1）的记录
-        sell_points = data_test[data_test[point] == 1]
-        # 打印时间、卖点预测值和实际标签
-        print('code:', code)
-        print(sell_points[['time', point]].reset_index())
 
     def get_time_series_data(self, file_name, target_time, time_window_minutes=60):
         # 读取 CSV 文件
