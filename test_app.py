@@ -29,4 +29,4 @@ class Test(TestCase):
 
     def test_buy_point_playback(self):
         with app.app_context():
-            buy_point_playback("神宇股份")
+            sell_point_playback("双林股份")

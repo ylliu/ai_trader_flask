@@ -148,9 +148,22 @@ class TrainModel:
         # 输入特征和目标变量
         X_test = data_test[self.features]
         y_pred = self.load_model_predict(X_test, action)
-        if y_pred[-1] == 1:
+        if action == self.BUY_POINT:
+            threshold = 0.7  # 设置你的阈值
+            prob_pred = self.loaded_buy_model.predict_proba(X_test)  # 获取预测概率
+        elif action == self.SELL_POINT:
+            threshold = 0.7  # 设置你的阈值
+            prob_pred = self.loaded_sell_model.predict_proba(X_test)  # 获取预测概率
+
+        # 假设是二分类问题，prob_pred[:, 1] 是类别1的预测概率
+
+        custom_pred = (prob_pred[:, 1] >= threshold).astype(int)  # 根据阈值决定类别
+
+        if custom_pred[-1] == 1:
+            # print(prob_pred)
             if is_send_message is True:
                 # 解析日期时间字符串
+
                 date_time_str = data_test['time'].iloc[-1]
                 date_time_obj = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S")
                 # 提取时分信息
