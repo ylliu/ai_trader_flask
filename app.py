@@ -240,12 +240,12 @@ def monitor_stocks():
         train_model = TrainModel()
         train_model.retrain_with_all_sell_data()
         train_model.retrain_with_all_buy_data()
-        stocks = MonitorStocks.query.all()
         while not stop_event.is_set():
             current_time = datetime.now()
             current_time_str = current_time.strftime('%H:%M')
             current_time = current_time.replace(second=0, microsecond=0)
             if '09:30' <= current_time_str < '11:30' or '13:00' <= current_time_str < '15:00':
+                stocks = MonitorStocks.query.all()
                 for stock in stocks:
                     print("code:", stock.stock_code)
                     train_model.save_data2(stock.stock_code, 500)
