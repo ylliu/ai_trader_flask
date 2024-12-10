@@ -149,10 +149,10 @@ class TrainModel:
         X_test = data_test[self.features]
         y_pred = self.load_model_predict(X_test, action)
         if action == self.BUY_POINT:
-            threshold = 0.7  # 设置你的阈值
+            threshold = 0.6  # 设置你的阈值
             prob_pred = self.loaded_buy_model.predict_proba(X_test)  # 获取预测概率
         elif action == self.SELL_POINT:
-            threshold = 0.7  # 设置你的阈值
+            threshold = 0.6  # 设置你的阈值
             prob_pred = self.loaded_sell_model.predict_proba(X_test)  # 获取预测概率
 
         # 假设是二分类问题，prob_pred[:, 1] 是类别1的预测概率
