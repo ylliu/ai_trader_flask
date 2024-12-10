@@ -11,6 +11,9 @@ from sklearn.preprocessing import MinMaxScaler
 from Ashare import get_price
 from tushare_interface import TushareInterface
 
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s', filename='ai_trader.log')
+
 
 class TrainModel:
     def __init__(self):
@@ -326,8 +329,7 @@ class TrainModel:
         target_time = datetime.strftime(target_time, '%Y-%m-%d %H:%M:%S')
         # 确保目标时间存在于数据中
         if target_time not in df['time'].values:
-            self.logger.info("target_time:", target_time)
-            raise ValueError(f"Target time {target_time} not found in the data.")
+            self.logger.info(f'target_time:{target_time} not found in the data.')
 
         # 获取目标时间的索引位置
         target_index = df[df['time'] == target_time].index[0]
@@ -337,8 +339,8 @@ class TrainModel:
         cols_needed = ['time', 'open', 'Price', 'high', 'low', 'Volume']
         # 获取从目标时间前60条数据
         result_df = df.loc[start_index:target_index + 1, cols_needed]
-        self.logger.info("getdata_size:", len(result_df))
-        self.logger.info("select_count:", time_window_minutes)
+        self.logger.info(f'result_df_size:{len(result_df)}')
+        self.logger.info(f'select_count:{time_window_minutes}')
         return result_df
 
     def load_sell_model(self):

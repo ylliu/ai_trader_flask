@@ -2,7 +2,16 @@ import datetime
 
 from Ashare import get_price
 
+class SimulatedClockForTest:
+    def __init__(self):
+        self.current_time = datetime(2024, 12, 10, 9, 30)
+        self.end_time = datetime(2024, 12, 10, 15, 0)
 
+    def next(self):
+        if self.current_time < self.end_time:
+            self.current_time += datetime.timedelta(minutes=1)
+            return self.current_time
+        return None
 class SimulatedClock:
     def __init__(self, start_time=None, code=None,point_count=None):
         self.code = code
