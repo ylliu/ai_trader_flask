@@ -244,17 +244,15 @@ def monitor_stocks():
         while not stop_event.is_set():
             current_time = datetime.now()
             current_time_str = current_time.strftime('%H:%M')
+            current_time = current_time.replace(second=0, microsecond=0)
             if '09:30' <= current_time_str < '11:30' or '13:00' <= current_time_str < '15:00':
                 for stock in stocks:
                     print("code:", stock.stock_code)
+                    train_model.save_data2(stock.stock_code, 500)
+                    select_count = train_model.select_count()
+                    data_count = max(20, select_count)
                     # 在这里添加监控逻辑
-                    df = get_price(stock.stock_code, frequency='1m', count=train_model.select_count())
-                    last_index = df.index[-1]
-                    df = df.drop(last_index)
-                    df.index.name = 'time'
-                    # 重命名列
-                    df.rename(columns={'close': 'Price', 'volume': 'Volume'}, inplace=True)
-                    df = df.reset_index()
+                    df = train_model.get_time_series_data('%s.csv' % stock.stock_code, current_time, data_count)
                     train_model.code_trade_point_use_date(df, stock.name, True, train_model.SELL_POINT)
                     train_model.code_trade_point_use_date(df, stock.name, True, train_model.BUY_POINT)
             time.sleep(50)
