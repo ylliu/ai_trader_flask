@@ -324,10 +324,9 @@ class TrainModel:
         df = pd.read_csv(file_name)
         # 将 'time' 列转换为 datetime 格式
         target_time = datetime.strftime(target_time, '%Y-%m-%d %H:%M:%S')
-        target_time='2024-12-10 14:59:00'
         # 确保目标时间存在于数据中
         if target_time not in df['time'].values:
-            self.logger.info('f"Target time {target_time} not found in the data."')
+            self.logger.info("target_time:", target_time)
             raise ValueError(f"Target time {target_time} not found in the data.")
 
         # 获取目标时间的索引位置
