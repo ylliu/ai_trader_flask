@@ -1,3 +1,4 @@
+import logging
 import os
 import pickle
 from datetime import datetime, timedelta
@@ -21,6 +22,7 @@ class TrainModel:
         self.SELL_POINT = "Sell_Point"
         self.buy_model_file = None
         self.create_directories_if_not_exists()
+        self.logger = logging.getLogger(__name__)  # 获取一个以当前模块名命名的日志器，也可自定义名称
 
     def create_directories_if_not_exists(self):
         # 定义要创建的文件夹路径
@@ -322,8 +324,10 @@ class TrainModel:
         df = pd.read_csv(file_name)
         # 将 'time' 列转换为 datetime 格式
         target_time = datetime.strftime(target_time, '%Y-%m-%d %H:%M:%S')
+        target_time='2024-12-10 14:59:00'
         # 确保目标时间存在于数据中
         if target_time not in df['time'].values:
+            self.logger.info('f"Target time {target_time} not found in the data."')
             raise ValueError(f"Target time {target_time} not found in the data.")
 
         # 获取目标时间的索引位置
@@ -334,7 +338,8 @@ class TrainModel:
         cols_needed = ['time', 'open', 'Price', 'high', 'low', 'Volume']
         # 获取从目标时间前60条数据
         result_df = df.loc[start_index:target_index + 1, cols_needed]
-
+        self.logger.info("getdata_size:", len(result_df))
+        self.logger.info("select_count:", time_window_minutes)
         return result_df
 
     def load_sell_model(self):
