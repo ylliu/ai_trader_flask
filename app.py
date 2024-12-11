@@ -241,6 +241,7 @@ def monitor_stocks():
         train_model.retrain_with_all_sell_data()
         train_model.retrain_with_all_buy_data()
         while not stop_event.is_set():
+            start_time = time.time()
             current_time = datetime.now()
             current_time_str = current_time.strftime('%H:%M')
             current_time = current_time.replace(second=0, microsecond=0)
@@ -255,7 +256,9 @@ def monitor_stocks():
                     df = train_model.get_time_series_data('%s.csv' % stock.stock_code, current_time, data_count)
                     train_model.code_trade_point_use_date(df, stock.name, True, train_model.SELL_POINT)
                     train_model.code_trade_point_use_date(df, stock.name, True, train_model.BUY_POINT)
-            time.sleep(50)
+            end_time = time.time()
+            print(f"执行时间: {end_time - start_time} 秒")
+            time.sleep(5)
 
 
 @app.route('/start_monitor', methods=['POST'])
