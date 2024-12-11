@@ -21,3 +21,9 @@ class TestTrainModel(TestCase):
     def test_sell_point_predict(self):
         train_model = TrainModel()
         train_model.retrain_with_all_sell_data()
+
+
+class TestTrainModel(TestCase):
+    def test_send_message_to_dingding(self):
+        train_model = TrainModel()
+        train_model.send_message_to_dingding("计算超时", None, "00:00")

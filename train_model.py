@@ -231,6 +231,9 @@ class TrainModel:
             action_text = "Buy点"
         if action == self.SELL_POINT:
             action_text = "Sell点"
+        if action is None:
+            action_text = "timeout"
+
         data = {
             "text": f"{time} {name}提示{action_text}"
         }
@@ -327,6 +330,7 @@ class TrainModel:
         df = pd.read_csv(file_name)
         # 将 'time' 列转换为 datetime 格式
         target_time = datetime.strftime(target_time, '%Y-%m-%d %H:%M:%S')
+        # target_time = "2024-12-11 15:00:00"
         # 确保目标时间存在于数据中
         if target_time not in df['time'].values:
             self.logger.info(f'target_time:{target_time} not found in the data.')

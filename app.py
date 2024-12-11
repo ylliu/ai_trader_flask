@@ -244,8 +244,12 @@ def monitor_stocks():
             start_time = time.time()
             current_time = datetime.now()
             current_time_str = current_time.strftime('%H:%M')
-            current_time = current_time.replace(second=0, microsecond=0)
+
             if '09:30' <= current_time_str < '11:30' or '13:01' <= current_time_str < '15:00':
+                second = current_time.second
+                if second != 5:
+                    time.sleep(0.8)
+                    continue
                 stocks = MonitorStocks.query.all()
                 for stock in stocks:
                     print("code:", stock.stock_code)
@@ -256,9 +260,11 @@ def monitor_stocks():
                     df = train_model.get_time_series_data('%s.csv' % stock.stock_code, current_time, data_count)
                     train_model.code_trade_point_use_date(df, stock.name, True, train_model.SELL_POINT)
                     train_model.code_trade_point_use_date(df, stock.name, True, train_model.BUY_POINT)
-            end_time = time.time()
-            print(f"执行时间: {end_time - start_time} 秒")
-            time.sleep(5)
+                end_time = time.time()
+                cost = end_time - start_time
+                print(f"执行时间: {end_time - start_time} 秒")
+                if cost > 50:
+                    train_model.send_message_to_dingding("计算超时", "", "00:00")
 
 
 @app.route('/start_monitor', methods=['POST'])
