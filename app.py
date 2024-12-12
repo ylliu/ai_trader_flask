@@ -272,6 +272,8 @@ def monitor_stocks():
                 print(f"执行时间: {end_time - start_time} 秒")
                 if cost > 50:
                     train_model.send_message_to_dingding("计算超时", "", "00:00")
+            else:
+                time.sleep(60)
 
 
 @app.route('/start_monitor', methods=['POST'])
