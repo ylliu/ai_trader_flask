@@ -165,7 +165,7 @@ class TrainModel:
         # 假设是二分类问题，prob_pred[:, 1] 是类别1的预测概率
 
         custom_pred = (prob_pred[:, 1] >= threshold).astype(int)  # 根据阈值决定类别
-
+        # print(prob_pred[-1])
         if custom_pred[-1] == 1:
             # print(prob_pred)
             if is_send_message is True:
