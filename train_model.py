@@ -148,6 +148,7 @@ class TrainModel:
 
     def code_trade_point_use_date(self, data_input, name, is_send_message, action):
         # print(action)
+        self.logger.info(f'action:{action},name:{name}')
         if action == self.SELL_POINT:
             point = 'Predicted_Sell_Point'
         if action == self.BUY_POINT:
@@ -167,6 +168,8 @@ class TrainModel:
 
         custom_pred = (prob_pred[:, 1] >= threshold).astype(int)  # 根据阈值决定类别
         print(prob_pred[-1])
+        time = data_test['time'].iloc[-1]
+        self.logger.info(f'time:{time},pred:{prob_pred[-1]}')
         if custom_pred[-1] == 1:
             # print(prob_pred)
             if is_send_message is True:
