@@ -1,9 +1,10 @@
 import json
 import sys
 import time
-from datetime import datetime
+import datetime
 from threading import Thread, Event
-
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from flask import Flask, jsonify, request
 import pandas as pd
 import os
@@ -30,6 +31,9 @@ CORS(app)  # 添加这一行来启用 CORS 支持
 CORS(app, resources={r"/*": {"origins": "*"}})
 stop_event = Event()
 monitor_thread = None
+# 配置 JWT 密钥
+app.config['JWT_SECRET_KEY'] = 'your-secret-key'
+jwt = JWTManager(app)
 
 
 # 数据存储路径
@@ -42,6 +46,21 @@ class MonitorStocks(db.Model):
 
     def __repr__(self):
         return f"<MonitorStocks(stock_code={self.stock_code}, description={self.name})>"
+
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+
+
+class LoginRecord(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    login_time = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
+    ip_address = db.Column(db.String(50), nullable=False)
+
+    user = db.relationship('User', backref=db.backref('login_records', lazy=True))
 
 
 @app.route('/time_share_data/<name>', methods=['GET'])
@@ -243,8 +262,8 @@ def monitor_stocks():
         train_model.retrain_with_all_buy_data()
         while not stop_event.is_set():
             start_time = time.time()
-            current_time = datetime.now()
-            current_time1 = datetime.now()
+            current_time = datetime.datetime.now()
+            current_time1 = datetime.datetime.now()
             current_time_str = current_time.strftime('%H:%M')
             current_time = current_time.replace(second=0, microsecond=0)
             if '09:30' <= current_time_str < '11:30' or '13:01' <= current_time_str < '15:00':
@@ -310,8 +329,60 @@ def monitor_status():
     return jsonify({"isMonitoring": is_monitoring}), 200
 
 
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+    print('register')
+    print("username:", username)
+    if not username or not password:
+        return jsonify({"message": "Username and password are required."}), 400
+
+    hashed_password = generate_password_hash(password)
+
+    try:
+        new_user = User(username=username, password=hashed_password)
+        db.session.add(new_user)
+        db.session.commit()
+        return jsonify({"message": "User registered successfully."}), 201
+    except Exception as e:
+        db.session.rollback()
+        if "UNIQUE constraint failed" in str(e):
+            return jsonify({"message": "Username already exists."}), 409
+        return jsonify({"message": "An error occurred."}), 500
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+    print('login')
+    print("username:", username)
+    if not username or not password:
+        return jsonify({"message": "Username and password are required."}), 400
+
+    user = User.query.filter_by(username=username).first()
+
+    if user and check_password_hash(user.password, password):
+        access_token = create_access_token(identity=user.username, fresh=True,
+                                           expires_delta=datetime.timedelta(hours=1))
+        # 获取当前时间和客户端 IP 地址
+        ip_address = request.remote_addr  # 获取客户端 IP 地址
+
+        # 插入登录记录
+        login_record = LoginRecord(user_id=user.id, ip_address=ip_address)
+        db.session.add(login_record)
+        db.session.commit()
+
+        return jsonify({"message": "Login successful", "access_token": access_token}), 200
+    else:
+        return jsonify({"message": "Invalid username or password."}), 401
+
+
 # with app.app_context():
-#     db.drop_all()  # This will delete everything
+#     # db.drop_all()  # This will delete everything
 #     print('11111')
 #     db.create_all()
 #     print('22222')

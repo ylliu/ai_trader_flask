@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from app import get_time_share_data, sell_point_playback, add_stock, app, delete_stock, get_all_stocks, \
-    buy_point_playback, monitor_stocks
+    buy_point_playback, monitor_stocks, register
 
 
 class Test(TestCase):
@@ -34,3 +34,5 @@ class Test(TestCase):
     def test_monitor_stocks(self):
         with app.app_context():
             monitor_stocks()
+
+
