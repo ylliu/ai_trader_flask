@@ -28,6 +28,7 @@ class TrainModel:
         self.logger = logging.getLogger(__name__)  # 获取一个以当前模块名命名的日志器，也可自定义名称
         self.SELL_POINT_THRESHOLD = 0.64
         self.BUY_POINT_THRESHOLD = 0.65
+        self.MAX_SELL_PERIOD = 80
 
     def create_directories_if_not_exists(self):
         # 定义要创建的文件夹路径

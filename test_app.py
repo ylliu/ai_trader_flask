@@ -11,7 +11,7 @@ class Test(TestCase):
 
     def test_sell_point_playback(self):
         with app.app_context():
-            sell_point_playback('景业智能')
+            sell_point_playback('永辉超市')
 
     def test_add_stock(self):
         with app.app_context():

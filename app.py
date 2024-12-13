@@ -137,7 +137,7 @@ def sell_point_playback(name):
     sell_points = []
     while not clock.is_time_to_end():
         data_count = max(clock.count, 20)
-        data_count = min(data_count, 100)
+        data_count = min(data_count, train_model.MAX_SELL_PERIOD)
         df = train_model.get_time_series_data('%s.csv' % stock_code, time, data_count)
         sell_point = train_model.code_trade_point_use_date(df, name, False, train_model.SELL_POINT)
         if sell_point is not None:
@@ -259,7 +259,7 @@ def monitor_stocks():
                     select_count = train_model.select_count()
                     data_count_buy = max(20, select_count)
                     data_count_sell = max(20, select_count)
-                    data_count_sell = min(data_count_sell, 100)
+                    data_count_sell = min(data_count_sell, train_model.MAX_SELL_PERIOD)
                     # 在这里添加监控逻辑
                     df_sell = train_model.get_time_series_data('%s.csv' % stock.stock_code, current_time,
                                                                data_count_sell)
