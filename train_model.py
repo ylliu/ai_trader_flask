@@ -27,7 +27,7 @@ class TrainModel:
         self.create_directories_if_not_exists()
         self.logger = logging.getLogger(__name__)  # 获取一个以当前模块名命名的日志器，也可自定义名称
         self.SELL_POINT_THRESHOLD = 0.65
-        self.BUY_POINT_THRESHOLD = 0.7
+        self.BUY_POINT_THRESHOLD = 0.65
 
     def create_directories_if_not_exists(self):
         # 定义要创建的文件夹路径
@@ -165,7 +165,7 @@ class TrainModel:
         # 假设是二分类问题，prob_pred[:, 1] 是类别1的预测概率
 
         custom_pred = (prob_pred[:, 1] >= threshold).astype(int)  # 根据阈值决定类别
-        # print(prob_pred[-1])
+        print(prob_pred[-1])
         if custom_pred[-1] == 1:
             # print(prob_pred)
             if is_send_message is True:
