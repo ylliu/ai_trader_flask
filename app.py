@@ -271,6 +271,9 @@ def monitor_stocks():
                 if second != 5:
                     time.sleep(0.8)
                     continue
+                minute = current_time1.minute
+                if minute % 10 == 0:
+                    train_model.send_message_to_dingding("监控程序在线中", "", "00:00")
                 stocks = MonitorStocks.query.all()
                 for stock in stocks:
                     train_model.save_data2(stock.stock_code, 500)
