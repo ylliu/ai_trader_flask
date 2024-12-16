@@ -239,7 +239,7 @@ class TrainModel:
             action_text = "Sell点"
         if action is None:
             action_text = "timeout"
-        if action is "ON_LINE":
+        if action == "ON_LINE":
             action_text = "online"
 
         data = {
