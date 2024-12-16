@@ -9,10 +9,20 @@ import requests
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import MinMaxScaler
 from Ashare import get_price
+
+# from app import insert_trade_record
 from tushare_interface import TushareInterface
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s', filename='ai_trader.log')
+
+
+class TraderRecord:
+    def __init__(self, name, direction, price, timestamp):
+        self.stock_name = name
+        self.direction = direction
+        self.price = price
+        self.timestamp = timestamp
 
 
 class TrainModel:
@@ -172,6 +182,7 @@ class TrainModel:
         self.logger.info(f'time:{time},pred:{prob_pred[-1]}')
         if custom_pred[-1] == 1:
             # print(prob_pred)
+            # insert_trade_record(name, time, data_test['Price'].iloc[-1])
             if is_send_message is True:
                 # 解析日期时间字符串
 
@@ -187,7 +198,8 @@ class TrainModel:
             trade_points = data_test[data_test[point] == 1]
             # 打印时间、卖点预测值和实际标签
             print(trade_points[['time', point]].reset_index())
-            return data_test['time'].iloc[-1]
+            new_record = TraderRecord(name, action, data_test['Price'].iloc[-1], time)
+            return new_record
         return None
 
     def save_data(self, code, sell_start, sell_end, action_type):

@@ -286,8 +286,14 @@ def monitor_stocks():
                                                                data_count_sell)
                     df_buy = train_model.get_time_series_data('%s.csv' % stock.stock_code, current_time,
                                                               data_count_buy)
-                    train_model.code_trade_point_use_date(df_sell, stock.name, True, train_model.SELL_POINT)
-                    train_model.code_trade_point_use_date(df_buy, stock.name, True, train_model.BUY_POINT)
+                    new_sell_record = train_model.code_trade_point_use_date(df_sell, stock.name, True,
+                                                                            train_model.SELL_POINT)
+                    new_buy_record = train_model.code_trade_point_use_date(df_buy, stock.name, True,
+                                                                           train_model.BUY_POINT)
+                    if new_buy_record is not None:
+                        insert_trade_record(new_buy_record)
+                    if new_sell_record is not None:
+                        insert_trade_record(new_sell_record)
                 end_time = time.time()
                 cost = end_time - start_time
                 print(f"执行时间: {end_time - start_time} 秒")
@@ -382,6 +388,29 @@ def login():
         return jsonify({"message": "Login successful", "access_token": access_token}), 200
     else:
         return jsonify({"message": "Invalid username or password."}), 401
+
+
+class TradingRecord(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    stock_name = db.Column(db.String(100), nullable=False)
+    direction = db.Column(db.String(10), nullable=False)  # 'buy' or 'sell'
+    price = db.Column(db.Float, nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
+
+    def __repr__(self):
+        return f'<TradingRecord {self.stock_name} {self.direction} {self.price} {self.timestamp}>'
+
+
+def insert_trade_record(new_record):
+    try:
+        trading_record = TradingRecord(stock_name=new_record.stock_name, direction=new_record.direction,
+                                       price=new_record.price,
+                                       timestamp=new_record.timestamp)
+        db.session.add(trading_record)
+        db.session.commit()
+    except Exception as e:
+        print(e)
+        db.session.rollback()
 
 
 # with app.app_context():
