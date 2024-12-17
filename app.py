@@ -276,6 +276,7 @@ def monitor_stocks():
                     train_model.send_message_to_dingding("监控程序在线中", "ON_LINE", "00:00")
                 stocks = MonitorStocks.query.all()
                 for stock in stocks:
+                    print(stock.name)
                     train_model.save_data2(stock.stock_code, 500)
                     select_count = train_model.select_count()
                     data_count_buy = max(20, select_count)
