@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
 import requests
+from scipy.stats import linregress
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import MinMaxScaler
 from Ashare import get_price
@@ -20,7 +21,9 @@ class TrainModel:
         self.loaded_sell_model = None
         self.loaded_buy_model = None
         self.sell_model_file = None
-        self.features = ['Price', 'Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change']
+        self.sell_features = ['Price', 'Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change', 'rsi', 'volume_ma5',
+                              'vwap']
+        self.buy_features = ['Price', 'Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change', 'rsi']
         self.BUY_POINT = "Buy_Point"
         self.SELL_POINT = "Sell_Point"
         self.buy_model_file = None
@@ -54,28 +57,35 @@ class TrainModel:
         else:
             print(f"Directory '{buy_dir}' already exists.")
 
-    def data_convert(self, file_name):
-        data = pd.read_csv(file_name)
-        # 预处理：如去除缺失值、归一化等
-        data.ffill()
-        # 归一化价格和成交量数据
-        scaler = MinMaxScaler()
-        data[['Price', 'Volume']] = scaler.fit_transform(data[['Price', 'Volume']])
+    def calculate_rsi(self, series, period=14):
+        delta = series.diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+        rs = gain / loss
+        rsi = 100 - (100 / (1 + rs))
+        return rsi
 
-        # 添加简单的移动平均线作为特征
-        data['SMA5'] = data['Price'].rolling(window=5).mean()
-        data['SMA10'] = data['Price'].rolling(window=10).mean()
-        # 添加价格变化率
-        data['Price_change'] = data['Price'].pct_change()
-        data['Price_change'] = data['Price_change'].replace([np.inf, -np.inf], 0)
-        # 添加成交量变化率
-        data['Volume_change'] = data['Volume'].pct_change()
-        data['Volume_change'] = data['Volume_change'].replace([np.inf, -np.inf], 0)
-        # data['RSI'] = talib.RSI(data['Price'], timeperiod=14)
+    def calculate_price_slope(self, data, window_minutes=10):
+        # 获取最近window_minutes个数据
+        if len(data) < window_minutes:
+            raise ValueError(f"数据长度小于 {window_minutes}，无法计算斜率")
 
-        # 去除空值
-        data.dropna(inplace=True)
-        return data
+        # 只使用最近10分钟的数据
+        y = data['Price'].values[-window_minutes:]
+        x = range(window_minutes)  # x 为时间索引，从0到window_minutes-1
+
+        # 计算线性回归的斜率
+        slope, _, _, _, _ = linregress(x, y)
+
+        return slope
+
+    # 计算 MACD
+    def calculate_macd(self, data, fast_period=12, slow_period=26, signal_period=9):
+        fast_ema = data['Price'].ewm(span=fast_period, adjust=False).mean()
+        slow_ema = data['Price'].ewm(span=slow_period, adjust=False).mean()
+        macd = fast_ema - slow_ema
+        signal = macd.ewm(span=signal_period, adjust=False).mean()
+        return macd, signal
 
     def data_convert2(self, data):
         # 预处理：如去除缺失值、归一化等
@@ -93,7 +103,9 @@ class TrainModel:
         # 添加成交量变化率
         data['Volume_change'] = data['Volume'].pct_change().fillna(0)
         data['Volume_change'] = data['Volume_change'].replace([np.inf, -np.inf], 0)
-        # data['RSI'] = talib.RSI(data['Price'], timeperiod=14)
+        data['rsi'] = self.calculate_rsi(data['Price'], 14).fillna(0)
+        data['volume_ma5'] = data['Volume'].rolling(window=5).mean()
+        data['vwap'] = (data['Price'] * data['Volume']).cumsum() / data['Volume'].cumsum()
         # 去除空值
         # print(data)
         data.dropna(inplace=True)
@@ -102,7 +114,8 @@ class TrainModel:
     def load_and_merge_data(self, file_names):
         all_data = []
         for file in file_names:
-            data = self.data_convert(file)
+            data_input = pd.read_csv(file)
+            data = self.data_convert2(data_input)
             all_data.append(data)
         # 合并所有数据
         merged_data = pd.concat(all_data, axis=0, ignore_index=True)
@@ -113,7 +126,10 @@ class TrainModel:
 
     def train_model(self, action):
         # 输入特征和目标变量
-        X = self.data[self.features]
+        if action == self.BUY_POINT:
+            X = self.data[self.buy_features]
+        if action == self.SELL_POINT:
+            X = self.data[self.sell_features]
         y = self.data[action]  # 卖点标签（1 为卖点，0 为非卖点）
         X_train = X
         y_train = y
@@ -148,14 +164,17 @@ class TrainModel:
 
     def code_trade_point_use_date(self, data_input, name, is_send_message, action):
         # print(action)
+        data_test = self.data_convert2(data_input)
         self.logger.info(f'action:{action},name:{name}')
         if action == self.SELL_POINT:
             point = 'Predicted_Sell_Point'
+            X_test = data_test[self.sell_features]
         if action == self.BUY_POINT:
             point = 'Predicted_Buy_Point'
-        data_test = self.data_convert2(data_input)
+            X_test = data_test[self.buy_features]
+
         # 输入特征和目标变量
-        X_test = data_test[self.features]
+
         y_pred = self.load_model_predict(X_test, action)
         if action == self.BUY_POINT:
             threshold = self.BUY_POINT_THRESHOLD  # 设置你的阈值
