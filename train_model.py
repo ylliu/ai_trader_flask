@@ -347,10 +347,10 @@ class TrainModel:
         target_index = df[df['time'] == target_time].index[0]
 
         # 计算60条数据的起始索引
-        start_index = max(target_index - time_window_minutes + 1, 0)
+        start_index = max(target_index - time_window_minutes, 0)
         cols_needed = ['time', 'open', 'Price', 'high', 'low', 'Volume']
         # 获取从目标时间前60条数据
-        result_df = df.loc[start_index:target_index + 1, cols_needed]
+        result_df = df.loc[start_index:target_index, cols_needed]
         self.logger.info(f'result_df_size:{len(result_df)}')
         self.logger.info(f'select_count:{time_window_minutes}')
         return result_df
