@@ -63,6 +63,18 @@ class LoginRecord(db.Model):
     user = db.relationship('User', backref=db.backref('login_records', lazy=True))
 
 
+# 数据库模型
+class Holding(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    stock_name = db.Column(db.String(50), unique=True, nullable=False)
+    stock_code = db.Column(db.String(50), unique=True, nullable=False)
+    cost_price = db.Column(db.Float, nullable=False)
+    added_on = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
+    def __repr__(self):
+        return f"<Holding {self.stock_name}>"
+
+
 @app.route('/time_share_data/<name>', methods=['GET'])
 def get_time_share_data(name):
     try:
@@ -274,22 +286,8 @@ def monitor_stocks():
                 minute = current_time1.minute
                 if minute % 10 == 0:
                     train_model.send_message_to_dingding("监控程序在线中", "ON_LINE", "00:00")
-                stocks = MonitorStocks.query.all()
-                for stock in stocks:
-                    print(stock.name)
-                    train_model.save_data2(stock.stock_code, 500)
-                    select_count = train_model.select_count()
-                    select_count = select_count - 2
-                    data_count_buy = max(20, select_count)
-                    data_count_sell = max(20, select_count)
-                    data_count_sell = min(data_count_sell, train_model.MAX_SELL_PERIOD)
-                    # 在这里添加监控逻辑
-                    df_sell = train_model.get_time_series_data('%s.csv' % stock.stock_code, current_time,
-                                                               data_count_sell)
-                    df_buy = train_model.get_time_series_data('%s.csv' % stock.stock_code, current_time,
-                                                              data_count_buy)
-                    train_model.code_trade_point_use_date(df_sell, stock.name, True, train_model.SELL_POINT)
-                    train_model.code_trade_point_use_date(df_buy, stock.name, True, train_model.BUY_POINT)
+                monitor_selected_stocks(current_time, train_model)
+                monitor_holdings_stocks(current_time, train_model)
                 end_time = time.time()
                 cost = end_time - start_time
                 print(f"执行时间: {end_time - start_time} 秒")
@@ -297,6 +295,55 @@ def monitor_stocks():
                     train_model.send_message_to_dingding("计算超时", "", "00:00")
             else:
                 time.sleep(60)
+
+
+def monitor_selected_stocks(current_time, train_model):
+    stocks = MonitorStocks.query.all()
+    for stock in stocks:
+        print(stock.name)
+        train_model.save_data2(stock.stock_code, 500)
+        select_count = train_model.select_count()
+        select_count = select_count - 2
+        data_count_buy = max(20, select_count)
+        data_count_sell = max(20, select_count)
+        data_count_sell = min(data_count_sell, train_model.MAX_SELL_PERIOD)
+        # 在这里添加监控逻辑
+        df_sell = train_model.get_time_series_data('%s.csv' % stock.stock_code, current_time,
+                                                   data_count_sell)
+        df_buy = train_model.get_time_series_data('%s.csv' % stock.stock_code, current_time,
+                                                  data_count_buy)
+        train_model.code_trade_point_use_date(df_sell, stock.name, True, train_model.SELL_POINT)
+        train_model.code_trade_point_use_date(df_buy, stock.name, True, train_model.BUY_POINT)
+
+
+def monitor_holdings_stocks(current_time, train_model):
+    stocks = Holding.query.all()
+    for stock in stocks:
+        print(stock)
+        code = stock.stock_code
+        current_price = get_current_price(code)
+        print(current_price)
+        cost_price = stock.cost_price
+        # 计算跌幅百分比
+        if cost_price > 0:
+            percentage_decrease = ((cost_price - current_price) / cost_price) * 100
+        else:
+            percentage_decrease = 0
+
+        # 如果跌幅超过 5%，则发送提醒
+        print(percentage_decrease)
+        if percentage_decrease < -5.0:
+            stock.stock_name = stock.stock_name + "进入5%止损区间"
+            train_model.send_message_to_dingding(stock.stock_name, train_model.SELL_POINT, current_time)
+        # 在这里添加监控逻辑
+
+
+def get_current_price(code):
+    df = get_price(code, frequency='1m', count=2)  # 支持'1m','5m','15m','30m','60m'
+    last_index = df.index[-1]
+    df = df.drop(last_index)
+    current_price = df.iloc[-1]['close']
+    return current_price
 
 
 @app.route('/start_monitor', methods=['POST'])
@@ -384,6 +431,62 @@ def login():
         return jsonify({"message": "Login successful", "access_token": access_token}), 200
     else:
         return jsonify({"message": "Invalid username or password."}), 401
+
+
+# 获取所有持仓
+@app.route('/get_holdings', methods=['GET'])
+def get_holdings():
+    holdings = Holding.query.all()
+    holding_list = [
+        {
+            'stockName': holding.stock_name,
+            'costPrice': holding.cost_price,
+            'addedOn': holding.added_on
+        }
+        for holding in holdings
+    ]
+    return jsonify(holding_list)
+
+
+# 添加持仓
+@app.route('/add_holding/<stock_name>', methods=['POST'])
+def add_holding(stock_name):
+    tushare_interface = TushareInterface()
+    stock_code = tushare_interface.get_code_by_name(stock_name)
+    data = request.json
+    cost_price = data.get('cost_price')
+
+    if not cost_price:
+        return jsonify({"message": "成本价和当前价是必需的"}), 400
+
+    # 检查股票是否已存在
+    existing_holding = Holding.query.filter_by(stock_name=stock_name).first()
+    if existing_holding:
+        return jsonify({"message": "持仓已存在"}), 400
+
+    new_holding = Holding(
+        stock_name=stock_name,
+        cost_price=cost_price,
+
+        stock_code=stock_code
+    )
+    db.session.add(new_holding)
+    db.session.commit()
+
+    return jsonify({"message": "持仓添加成功"}), 201
+
+
+# 删除持仓
+@app.route('/del_holding/<stock_name>', methods=['POST'])
+def delete_holding(stock_name):
+    holding = Holding.query.filter_by(stock_name=stock_name).first()
+    if not holding:
+        return jsonify({"message": "持仓不存在"}), 404
+
+    db.session.delete(holding)
+    db.session.commit()
+
+    return jsonify({"message": "持仓删除成功"}), 200
 
 
 # with app.app_context():

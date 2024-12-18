@@ -1,7 +1,9 @@
+import datetime
 from unittest import TestCase
 
 from app import get_time_share_data, sell_point_playback, add_stock, app, delete_stock, get_all_stocks, \
-    buy_point_playback, monitor_stocks, register
+    buy_point_playback, monitor_stocks, register, monitor_holdings_stocks
+from train_model import TrainModel
 
 
 class Test(TestCase):
@@ -29,10 +31,16 @@ class Test(TestCase):
 
     def test_buy_point_playback(self):
         with app.app_context():
-            buy_point_playback("润欣科技")
+            buy_point_playback("引力传媒")
 
     def test_monitor_stocks(self):
         with app.app_context():
             monitor_stocks()
 
+    def test_monitor_holdings_stocks(self):
+        with app.app_context():
+            train_model = TrainModel()
+            time = datetime.datetime.now()
 
+            current_time = time.replace(second=0, microsecond=0)
+            monitor_holdings_stocks(current_time, train_model)

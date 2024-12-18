@@ -16,7 +16,17 @@ from tushare_interface import TushareInterface
 current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
 # 构造日志文件名
-log_filename = f'ai_trader_{current_time}.log'
+log_filename = f'./log/ai_trader_{current_time}.log'
+import os
+
+log_folder = 'log'
+# 检查文件夹是否存在
+if not os.path.exists(log_folder):
+    # 如果不存在则创建文件夹
+    os.makedirs(log_folder)
+    print(f"文件夹 '{log_folder}' 已创建。")
+else:
+    print(f"文件夹 '{log_folder}' 已存在。")
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s', filename=log_filename)
