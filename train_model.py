@@ -12,8 +12,14 @@ from sklearn.preprocessing import MinMaxScaler
 from Ashare import get_price
 from tushare_interface import TushareInterface
 
+# 获取当前日期和时间，并格式化为字符串
+current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+
+# 构造日志文件名
+log_filename = f'ai_trader_{current_time}.log'
+
 logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s', filename='ai_trader.log')
+                    format='%(asctime)s - %(levelname)s - %(message)s', filename=log_filename)
 
 
 class TrainModel:
@@ -189,6 +195,7 @@ class TrainModel:
         print(prob_pred[-1])
         time = data_test['time'].iloc[-1]
         self.logger.info(f'time:{time},pred:{prob_pred[-1]}')
+        self.logger.info(f'data:{data_input}')
         if custom_pred[-1] == 1:
             # print(prob_pred)
             if is_send_message is True:

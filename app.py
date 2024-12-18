@@ -279,6 +279,7 @@ def monitor_stocks():
                     print(stock.name)
                     train_model.save_data2(stock.stock_code, 500)
                     select_count = train_model.select_count()
+                    select_count = select_count - 2
                     data_count_buy = max(20, select_count)
                     data_count_sell = max(20, select_count)
                     data_count_sell = min(data_count_sell, train_model.MAX_SELL_PERIOD)
