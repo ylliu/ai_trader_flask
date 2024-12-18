@@ -23,7 +23,7 @@ class TrainModel:
         self.sell_model_file = None
         self.sell_features = ['Price', 'Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change', 'rsi', 'volume_ma5',
                               'vwap']
-        self.buy_features = ['Price', 'Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change', 'rsi']
+        self.buy_features = ['Price', 'Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change']
         self.BUY_POINT = "Buy_Point"
         self.SELL_POINT = "Sell_Point"
         self.buy_model_file = None
