@@ -287,7 +287,7 @@ def monitor_stocks():
                 if minute % 10 == 0:
                     train_model.send_message_to_dingding("监控程序在线中", "ON_LINE", "00:00")
                 monitor_selected_stocks(current_time, train_model)
-                monitor_holdings_stocks(current_time, train_model)
+                monitor_holdings_stocks(current_time, current_time)
                 end_time = time.time()
                 cost = end_time - start_time
                 print(f"执行时间: {end_time - start_time} 秒")
@@ -326,7 +326,7 @@ def monitor_holdings_stocks(current_time, train_model):
         cost_price = stock.cost_price
         # 计算跌幅百分比
         if cost_price > 0:
-            percentage_decrease = ((cost_price - current_price) / cost_price) * 100
+            percentage_decrease = ((current_price - cost_price) / cost_price) * 100
         else:
             percentage_decrease = 0
 
