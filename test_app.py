@@ -48,7 +48,7 @@ class Test(TestCase):
     def test_insert_trade_record(self):
         with app.app_context():
             try:
-                new_record = TraderRecord("华大九天", 'buy', 34.2, datetime.datetime(2024, 10, 11, 22, 00, 00))
+                new_record = TraderRecord("华大九天", 'buy', 34.2, datetime.datetime(2024, 12, 19, 22, 00, 00))
                 insert_trade_record(new_record)
             except Exception as e:
                 print(e)

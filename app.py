@@ -3,6 +3,8 @@ import sys
 import time
 import datetime
 from threading import Thread, Event
+
+from sqlalchemy import func
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from flask import Flask, jsonify, request
@@ -515,6 +517,47 @@ def insert_trade_record(new_record):
     except Exception as e:
         print(e)
         db.session.rollback()
+
+
+# 获取所有交易记录的 API
+@app.route('/trading_records', methods=['GET'])
+def get_all_trading_records():
+    # 获取前端传递的日期参数，格式为 YYYY-MM-DD
+    date_str = request.args.get('date')  # 例如：2024-12-19
+    print(f"Received date: {date_str}")  # 打印接收到的日期参数
+    tushare_interface = TushareInterface()
+
+    if date_str:
+        try:
+            # 将日期字符串转换为 datetime 对象
+            date_start = datetime.datetime.strptime(date_str, '%Y-%m-%d')  # 当天的开始时间：2024-12-19 00:00:00
+            date_end = date_start + datetime.timedelta(days=1)  # 第二天的开始时间：2024-12-20 00:00:00
+
+            # 打印调试信息
+            print(f"Start: {date_start}, End: {date_end}")
+
+            # 按日期范围过滤交易记录
+            records = TradingRecord.query.filter(
+                TradingRecord.timestamp >= date_start,
+                TradingRecord.timestamp < date_end
+            ).all()
+        except Exception as e:
+            return jsonify({"error": f"Invalid date format or query issue: {str(e)}"}), 400
+    else:
+        # 如果没有提供日期参数，则返回所有记录
+        records = TradingRecord.query.all()
+
+    # 将查询结果转换为 JSON 格式，并格式化时间戳
+    return jsonify([
+        {
+            "id": record.id,
+            "stock_name": record.stock_name,
+            "direction": record.direction,
+            "price": record.price,
+            "timestamp": record.timestamp.strftime('%Y-%m-%d %H:%M:%S'),  # 格式化为 YYYY-MM-DD HH:MM:SS
+            "close_price": get_current_price(tushare_interface.get_code_by_name(record.stock_name))
+        } for record in records
+    ])
 
 
 # with app.app_context():
