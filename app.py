@@ -505,7 +505,7 @@ class TradingRecord(db.Model):
 
 def insert_trade_record(new_record):
     if new_record is None:
-        pass
+        return
     try:
         trading_record = TradingRecord(stock_name=new_record.stock_name, direction=new_record.direction,
                                        price=new_record.price,
