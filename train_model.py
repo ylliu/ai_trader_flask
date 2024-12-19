@@ -231,7 +231,8 @@ class TrainModel:
             trade_points = data_test[data_test[point] == 1]
             # 打印时间、卖点预测值和实际标签
             print(trade_points[['time', point]].reset_index())
-            new_record = TraderRecord(name, action, data_test['Price'].iloc[-1], time)
+            new_record = TraderRecord(name, action, data_test['Price'].iloc[-1],
+                                      datetime.strptime(time, '%Y-%m-%d %H:%M:%S'))
             return data_test['time'].iloc[-1], new_record
         return None, None
 
