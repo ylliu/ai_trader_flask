@@ -286,8 +286,8 @@ def monitor_stocks():
                 minute = current_time1.minute
                 if minute % 10 == 0:
                     train_model.send_message_to_dingding("监控程序在线中", "ON_LINE", "00:00")
+                    monitor_holdings_stocks(current_time, train_model)
                 monitor_selected_stocks(current_time, train_model)
-                monitor_holdings_stocks(current_time, current_time)
                 end_time = time.time()
                 cost = end_time - start_time
                 print(f"执行时间: {end_time - start_time} 秒")
@@ -487,6 +487,29 @@ def delete_holding(stock_name):
     db.session.commit()
 
     return jsonify({"message": "持仓删除成功"}), 200
+
+
+class TradingRecord(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    stock_name = db.Column(db.String(100), nullable=False)
+    direction = db.Column(db.String(10), nullable=False)  # 'buy' or 'sell'
+    price = db.Column(db.Float, nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
+
+    def __repr__(self):
+        return f'<TradingRecord {self.stock_name} {self.direction} {self.price} {self.timestamp}>'
+
+
+def insert_trade_record(new_record):
+    try:
+        trading_record = TradingRecord(stock_name=new_record.stock_name, direction=new_record.direction,
+                                       price=new_record.price,
+                                       timestamp=new_record.timestamp)
+        db.session.add(trading_record)
+        db.session.commit()
+    except Exception as e:
+        print(e)
+        db.session.rollback()
 
 
 # with app.app_context():

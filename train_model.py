@@ -32,6 +32,15 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s', filename=log_filename)
 
 
+
+
+class TraderRecord:
+    def __init__(self, name, direction, price, timestamp):
+        self.stock_name = name
+        self.direction = direction
+        self.price = price
+        self.timestamp = timestamp
+
 class TrainModel:
     def __init__(self):
         self.loaded_sell_model = None
@@ -223,6 +232,7 @@ class TrainModel:
             trade_points = data_test[data_test[point] == 1]
             # 打印时间、卖点预测值和实际标签
             print(trade_points[['time', point]].reset_index())
+            new_record = TraderRecord(name, action, data_test['Price'].iloc[-1], time)
             return data_test['time'].iloc[-1]
         return None
 
