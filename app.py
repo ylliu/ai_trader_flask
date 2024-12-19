@@ -170,7 +170,7 @@ def sell_point_playback(name):
         data_count = max(clock.count, 20)
         data_count = min(data_count, train_model.MAX_SELL_PERIOD)
         df = train_model.get_time_series_data('%s.csv' % stock_code, time, data_count)
-        sell_point = train_model.code_trade_point_use_date(df, name, False, train_model.SELL_POINT)
+        sell_point, _ = train_model.code_trade_point_use_date(df, name, False, train_model.SELL_POINT)
         if sell_point is not None:
             sell_points.append(sell_point)
         time = clock.next()
@@ -195,7 +195,7 @@ def buy_point_playback(name):
     while not clock.is_time_to_end():
         data_count = max(clock.count, 20)
         df = train_model.get_time_series_data('%s.csv' % stock_code, time, data_count)
-        buy_point = train_model.code_trade_point_use_date(df, name, False, train_model.BUY_POINT)
+        buy_point, _ = train_model.code_trade_point_use_date(df, name, False, train_model.BUY_POINT)
         if buy_point is not None:
             buy_points.append(buy_point)
         time = clock.next()
@@ -312,8 +312,11 @@ def monitor_selected_stocks(current_time, train_model):
                                                    data_count_sell)
         df_buy = train_model.get_time_series_data('%s.csv' % stock.stock_code, current_time,
                                                   data_count_buy)
-        train_model.code_trade_point_use_date(df_sell, stock.name, True, train_model.SELL_POINT)
-        train_model.code_trade_point_use_date(df_buy, stock.name, True, train_model.BUY_POINT)
+        sell_point, sell_record = train_model.code_trade_point_use_date(df_sell, stock.name, True,
+                                                                        train_model.SELL_POINT)
+        buy_point, buy_record = train_model.code_trade_point_use_date(df_buy, stock.name, True, train_model.BUY_POINT)
+        insert_trade_record(sell_record)
+        insert_trade_record(buy_record)
 
 
 def monitor_holdings_stocks(current_time, train_model):
@@ -501,6 +504,8 @@ class TradingRecord(db.Model):
 
 
 def insert_trade_record(new_record):
+    if new_record is None:
+        pass
     try:
         trading_record = TradingRecord(stock_name=new_record.stock_name, direction=new_record.direction,
                                        price=new_record.price,
