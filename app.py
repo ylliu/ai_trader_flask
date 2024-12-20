@@ -326,17 +326,9 @@ def monitor_selected_stocks_buy_point(current_time, train_model):
         select_count = train_model.select_count()
         select_count = select_count - 2
         data_count_buy = max(20, select_count)
-        data_count_sell = max(20, select_count)
-        data_count_sell = min(data_count_sell, train_model.MAX_SELL_PERIOD)
-        # 在这里添加监控逻辑
-        df_sell = train_model.get_time_series_data('%s.csv' % stock.stock_code, current_time,
-                                                   data_count_sell)
         df_buy = train_model.get_time_series_data('%s.csv' % stock.stock_code, current_time,
                                                   data_count_buy)
-        sell_point, sell_record = train_model.code_trade_point_use_date(df_sell, stock.name, True,
-                                                                        train_model.SELL_POINT)
         buy_point, buy_record = train_model.code_trade_point_use_date(df_buy, stock.name, True, train_model.BUY_POINT)
-        insert_trade_record(sell_record)
         insert_trade_record(buy_record)
 
 
