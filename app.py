@@ -338,8 +338,8 @@ def monitor_holdings_stocks(current_time, train_model):
         # 如果跌幅超过 5%，则发送提醒
         print(percentage_decrease)
         if percentage_decrease < -5.0:
-            stock.stock_name = stock.stock_name + "进入5%止损区间"
-            train_model.send_message_to_dingding(stock.stock_name, train_model.SELL_POINT, current_time)
+            insert_stock_name = stock.stock_name + "进入5%止损区间"
+            train_model.send_message_to_dingding(insert_stock_name, train_model.SELL_POINT, current_time)
         # 在这里添加监控逻辑
 
 

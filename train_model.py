@@ -47,7 +47,7 @@ class TrainModel:
         self.sell_model_file = None
         self.sell_features = ['Price', 'Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change', 'rsi', 'volume_ma5',
                               'vwap']
-        self.buy_features = ['Price', 'Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change']
+        self.buy_features = ['Price', 'Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change', 'rsi']
         self.BUY_POINT = "Buy_Point"
         self.SELL_POINT = "Sell_Point"
         self.buy_model_file = None
@@ -211,8 +211,9 @@ class TrainModel:
         # 假设是二分类问题，prob_pred[:, 1] 是类别1的预测概率
 
         custom_pred = (prob_pred[:, 1] >= threshold).astype(int)  # 根据阈值决定类别
-        print(prob_pred[-1])
         time = data_test['time'].iloc[-1]
+        print(time)
+        print(prob_pred[-1])
         self.logger.info(f'time:{time},pred:{prob_pred[-1]}')
         self.logger.info(f'data:{data_input}')
         if custom_pred[-1] == 1:
