@@ -289,7 +289,9 @@ def monitor_stocks():
                 if minute % 10 == 0:
                     train_model.send_message_to_dingding("监控程序在线中", "ON_LINE", "00:00")
                     monitor_holdings_stocks(current_time, train_model)
-                monitor_selected_stocks(current_time, train_model)
+                monitor_selected_stocks_buy_point(current_time, train_model)
+                monitor_my_holding_stocks_sell_point(current_time, train_model)
+
                 end_time = time.time()
                 cost = end_time - start_time
                 print(f"执行时间: {end_time - start_time} 秒")
@@ -299,7 +301,24 @@ def monitor_stocks():
                 time.sleep(60)
 
 
-def monitor_selected_stocks(current_time, train_model):
+def monitor_my_holding_stocks_sell_point(current_time, train_model):
+    stocks = Holding.query.all()
+    for stock in stocks:
+        print(stock.stock_name)
+        train_model.save_data2(stock.stock_code, 500)
+        select_count = train_model.select_count()
+        select_count = select_count - 2
+        data_count_sell = max(20, select_count)
+        data_count_sell = min(data_count_sell, train_model.MAX_SELL_PERIOD)
+        # 在这里添加监控逻辑
+        df_sell = train_model.get_time_series_data('%s.csv' % stock.stock_code, current_time,
+                                                   data_count_sell)
+        sell_point, sell_record = train_model.code_trade_point_use_date(df_sell, stock.stock_name, True,
+                                                                        train_model.SELL_POINT)
+        insert_trade_record(sell_record)
+
+
+def monitor_selected_stocks_buy_point(current_time, train_model):
     stocks = MonitorStocks.query.all()
     for stock in stocks:
         print(stock.name)
