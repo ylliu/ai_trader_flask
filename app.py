@@ -306,8 +306,7 @@ def monitor_my_holding_stocks_sell_point(current_time, train_model):
     for stock in stocks:
         print(stock.stock_name)
         train_model.save_data2(stock.stock_code, 500)
-        select_count = train_model.select_count()
-        select_count = select_count - 2
+        select_count = train_model.select_count2(current_time)
         data_count_sell = max(20, select_count)
         data_count_sell = min(data_count_sell, train_model.MAX_SELL_PERIOD)
         # 在这里添加监控逻辑
@@ -323,8 +322,7 @@ def monitor_selected_stocks_buy_point(current_time, train_model):
     for stock in stocks:
         print(stock.name)
         train_model.save_data2(stock.stock_code, 500)
-        select_count = train_model.select_count()
-        select_count = select_count - 2
+        select_count = train_model.select_count2(current_time)
         data_count_buy = max(20, select_count)
         df_buy = train_model.get_time_series_data('%s.csv' % stock.stock_code, current_time,
                                                   data_count_buy)

@@ -1,3 +1,4 @@
+import datetime
 from unittest import TestCase
 
 from train_model import TrainModel
@@ -22,7 +23,6 @@ class TestTrainModel(TestCase):
         train_model = TrainModel()
         train_model.retrain_with_all_sell_data()
 
-
     def test_send_message_to_dingding(self):
         train_model = TrainModel()
         # train_model.send_message_to_dingding("计算超时", None, "00:00")
@@ -30,4 +30,32 @@ class TestTrainModel(TestCase):
 
     # def test_should_create_trader_record(self):
 
+    def test_select_count2(self):
+        train_model = TrainModel()
+        # current_time = datetime.datetime.strptime('2024-12-25 09:51:00', '%Y-%m-%d %H:%M:%S')
+        # count = train_model.select_count2(current_time)
+        # self.assertEqual(count, 21)
+        #
+        # current_time = datetime.datetime.strptime('2024-12-25 09:53:00', '%Y-%m-%d %H:%M:%S')
+        # count = train_model.select_count2(current_time)
+        # self.assertEqual(count, 23)
+        #
+        # current_time = datetime.datetime.strptime('2024-12-25 09:31:00', '%Y-%m-%d %H:%M:%S')
+        # count = train_model.select_count2(current_time)
+        # self.assertEqual(count, 1)
+        #
+        # current_time = datetime.datetime.strptime('2024-12-25 11:30:00', '%Y-%m-%d %H:%M:%S')
+        # count = train_model.select_count2(current_time)
+        # self.assertEqual(count, 120)
 
+        current_time = datetime.datetime.strptime('2024-12-25 13:01:00', '%Y-%m-%d %H:%M:%S')
+        count = train_model.select_count2(current_time)
+        self.assertEqual(121, count)
+
+        current_time = datetime.datetime.strptime('2024-12-25 14:41:00', '%Y-%m-%d %H:%M:%S')
+        count = train_model.select_count2(current_time)
+        self.assertEqual(221, count)
+
+        current_time = datetime.datetime.strptime('2024-12-25 15:00:00', '%Y-%m-%d %H:%M:%S')
+        count = train_model.select_count2(current_time)
+        self.assertEqual(240, count)

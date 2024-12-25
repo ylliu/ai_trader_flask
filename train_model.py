@@ -422,3 +422,16 @@ class TrainModel:
         threshold = pd.to_datetime('%s 09:30:00' % s)
         filtered_df = df[df['time'] >= threshold]
         return len(filtered_df)
+
+    def select_count2(self, current_time):
+        # 计算当前时间距离9:30的分钟数
+        threshold = current_time.replace(hour=9, minute=30, second=0, microsecond=0)
+        delta = current_time - threshold
+        # #  计算13：00到9点30的分钟数的时候 跳过中间休市的时间
+        # if delta.seconds // 60 > 150:
+        #     delta = timedelta(minutes=150)
+        count = delta.seconds // 60
+        if count >= 211:
+            count = count - 90
+
+        return count
