@@ -225,8 +225,7 @@ class TrainModel:
                 date_time_str = data_test['time'].iloc[-1]
                 date_time_obj = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S")
                 # 提取时分信息
-                time_str = date_time_obj.strftime("%H:%M")
-                self.send_message_to_dingding(name, action, time_str)
+                self.send_message_to_dingding(name, action, date_time_obj.strftime("%H:%M"))
                 time.sleep(0.1)
             # print('code:', code)
 
