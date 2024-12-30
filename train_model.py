@@ -2,6 +2,7 @@ import logging
 import os
 import pickle
 from datetime import datetime, timedelta
+import time
 # import talib  # 用于计算技术指标
 import pandas as pd
 import numpy as np
@@ -211,10 +212,10 @@ class TrainModel:
         # 假设是二分类问题，prob_pred[:, 1] 是类别1的预测概率
 
         custom_pred = (prob_pred[:, 1] >= threshold).astype(int)  # 根据阈值决定类别
-        time = data_test['time'].iloc[-1]
-        print(time)
+        time_str = data_test['time'].iloc[-1]
+        print(time_str)
         print(prob_pred[-1])
-        self.logger.info(f'time:{time},pred:{prob_pred[-1]}')
+        self.logger.info(f'time:{time_str},pred:{prob_pred[-1]}')
         self.logger.info(f'data:{data_input}')
         if custom_pred[-1] == 1:
             # print(prob_pred)
