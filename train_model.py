@@ -226,6 +226,7 @@ class TrainModel:
                 # 提取时分信息
                 time_str = date_time_obj.strftime("%H:%M")
                 self.send_message_to_dingding(name, action, time_str)
+                time.sleep(0.1)
             # print('code:', code)
 
             data_test[('%s' % point)] = y_pred  # 将预测的卖点添加到数据中
