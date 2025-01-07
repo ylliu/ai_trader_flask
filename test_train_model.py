@@ -32,22 +32,6 @@ class TestTrainModel(TestCase):
 
     def test_select_count2(self):
         train_model = TrainModel()
-        # current_time = datetime.datetime.strptime('2024-12-25 09:51:00', '%Y-%m-%d %H:%M:%S')
-        # count = train_model.select_count2(current_time)
-        # self.assertEqual(count, 21)
-        #
-        # current_time = datetime.datetime.strptime('2024-12-25 09:53:00', '%Y-%m-%d %H:%M:%S')
-        # count = train_model.select_count2(current_time)
-        # self.assertEqual(count, 23)
-        #
-        # current_time = datetime.datetime.strptime('2024-12-25 09:31:00', '%Y-%m-%d %H:%M:%S')
-        # count = train_model.select_count2(current_time)
-        # self.assertEqual(count, 1)
-        #
-        # current_time = datetime.datetime.strptime('2024-12-25 11:30:00', '%Y-%m-%d %H:%M:%S')
-        # count = train_model.select_count2(current_time)
-        # self.assertEqual(count, 120)
-
         current_time = datetime.datetime.strptime('2024-12-25 13:01:00', '%Y-%m-%d %H:%M:%S')
         count = train_model.select_count2(current_time)
         self.assertEqual(121, count)
@@ -59,3 +43,6 @@ class TestTrainModel(TestCase):
         current_time = datetime.datetime.strptime('2024-12-25 15:00:00', '%Y-%m-%d %H:%M:%S')
         count = train_model.select_count2(current_time)
         self.assertEqual(240, count)
+    def test_save_data(self):
+        train_model = TrainModel()
+        train_model.save_data2('sz300547', 241)
