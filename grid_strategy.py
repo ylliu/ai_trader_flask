@@ -40,26 +40,25 @@ class GridStrategy:
 
         # 提取收盘价数据
         prices = df['Price'].tolist()
-
+        pre_close = df.iloc[0]['Price']
         # 找到 `indicate_buy_time` 列中匹配目标值的行索引
 
         # 提取 `datetime` 列的时分部分，匹配输入时间
         indices = df[df['datetime'].dt.strftime('%H:%M') == indicate_buy_time].index
         start_index = indices[0]
-        print(start_index)
-        df = df.iloc[start_index:]
-        print(df)
+        df_next = df.iloc[start_index:]
+        print(df_next)
         # 模拟逐条加载数据并判定买入信号
-        min_price = df[:start_index].Price.min()
-        max_price = df[:start_index].Price.max()
-        grid_strategy = GridStrategy2(10)
-        for i, row in enumerate(df.itertuples(index=False)):
-            min_price = df[:i].Price.min()
-            max_price = df[:i].Price.max()
-            grid_strategy.generate_grids(min_price, max_price)
-            action = grid_strategy.check_price(row.Price)
-            print(action)
+        grid_strategy = GridStrategy2(15)
+
+        for i, row in enumerate(df_next.itertuples(index=False)):
+            min_price = df[:i + start_index + 1].Price.min()
+            max_price = df[:i + start_index + 1].Price.max()
             print(row.datetime.strftime('%H:%M'))
+            grid_strategy.generate_grids(min_price, max_price)
+            last_price = df.iloc[start_index + i - 1]['Price']
+            action = grid_strategy.check_price(row.Price, type, last_price, pre_close)
+            print(action)
             if action == 'buy' and type == 'buy':
                 return row.datetime.strftime('%H:%M')
             if action == 'sell' and type == 'sell':
