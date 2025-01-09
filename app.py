@@ -10,12 +10,13 @@ import os
 from flask_cors import CORS
 from Ashare import get_price
 from SimulatedClock import SimulatedClock
+from holding import Holding
 from trading_record import TradingRecord
 from train_model import TrainModel
-from flask_sqlalchemy import SQLAlchemy
 from database import db
 
 from tushare_interface import TushareInterface
+from user import User, LoginRecord
 
 WIN = sys.platform.startswith('win')
 if WIN:  # 如果是 Windows 系统，使用三个斜线
@@ -49,31 +50,7 @@ class MonitorStocks(db.Model):
         return f"<MonitorStocks(stock_code={self.stock_code}, description={self.name})>"
 
 
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
-
-
-class LoginRecord(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    login_time = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
-    ip_address = db.Column(db.String(50), nullable=False)
-
-    user = db.relationship('User', backref=db.backref('login_records', lazy=True))
-
-
 # 数据库模型
-class Holding(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    stock_name = db.Column(db.String(50), unique=True, nullable=False)
-    stock_code = db.Column(db.String(50), unique=True, nullable=False)
-    cost_price = db.Column(db.Float, nullable=False)
-    added_on = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-
-    def __repr__(self):
-        return f"<Holding {self.stock_name}>"
 
 
 @app.route('/time_share_data/<name>', methods=['GET'])
