@@ -1,169 +1,261 @@
-from xtquant.xttrader import XtQuantTrader, XtQuantTraderCallback
-from xtquant.xttype import StockAccount
-from xtquant import xtconstant
+# -*- coding: utf-8 -*-
+"""
+申请开通QMT请添加微信咨询gjquant，获取更多资料访问https://miniqmt.com/
+此代码脚本仅用于软件测试，不能用于实盘交易，以此代码进行交易本人不承担任何损失
+"""
+import logging
+import os
+import sys
+import time
+import pandas as pd
+from xtquant.xttrader import XtQuantTrader  # 创建交易对象使用
+from xtquant.xttype import StockAccount  # 订阅账户信息使用
+from xtquant import xtconstant  # 执行交易的时候需要引入
+from datetime import datetime  # 时间戳改为日期时间格式的时候使用
 
+from xtquant import xtdata
 
-class MyXtQuantTraderCallback(XtQuantTraderCallback):
-    def on_disconnected(self):
-        """
-        连接断开
-        :return:
-        """
-        print("connection lost")
-
-    def on_stock_order(self, order):
-        """
-        委托回报推送
-        :param order: XtOrder对象
-        :return:
-        """
-        print("on order callback:")
-        print(order.stock_code, order.order_status, order.order_sysid)
-
-    def on_stock_trade(self, trade):
-        """
-        成交变动推送
-        :param trade: XtTrade对象
-        :return:
-        """
-        print("on trade callback")
-        print(trade.account_id, trade.stock_code, trade.order_id)
-
-    def on_order_error(self, order_error):
-        """
-        委托失败推送
-        :param order_error:XtOrderError 对象
-        :return:
-        """
-        print("on order_error callback")
-        print(order_error.order_id, order_error.error_id, order_error.error_msg)
-
-    def on_cancel_error(self, cancel_error):
-        """
-        撤单失败推送
-        :param cancel_error: XtCancelError 对象
-        :return:
-        """
-        print("on cancel_error callback")
-        print(cancel_error.order_id, cancel_error.error_id, cancel_error.error_msg)
-
-    def on_order_stock_async_response(self, response):
-        """
-        异步下单回报推送
-        :param response: XtOrderResponse 对象
-        :return:
-        """
-        print("on_order_stock_async_response")
-        print(response.account_id, response.order_id, response.seq)
-
-    def on_account_status(self, status):
-        """
-        :param response: XtAccountStatus 对象
-        :return:
-        """
-        print("on_account_status")
-        print(status.account_id, status.account_type, status.status)
+from tushare_interface import TushareInterface
 
 
 class XtTraderOrder:
+    def __init__(self):
+        # 设置日志
+        self.setup_logger()
+        # ——————————————————————————————————————————————————————————————————————————————————————————————————————
+        # 设置你的path=''QMT安装路径信息，acc=''引号内填入你的账号
+        path = r'D:\QMT\userdata_mini\userdata_mini'
+        acc = "8883252929"
+        # 创建交易对象
+        session_id = int(time.time())
+        self.xt_trader = XtQuantTrader(path, session_id)
 
-    def get_account_profit_rate(self, date):
-        path = 'D:\\qmt\\userdata_mini\\bin.x64'
-        # session_id为会话编号，策略使用方对于不同的Python策略需要使用不同的会话编号
-        session_id = 123456
-        xt_trader = XtQuantTrader(path, session_id)
-        # 创建资金账号为1000000365的证券账号对象
-        acc = StockAccount('8883252929')
-        # StockAccount可以用第二个参数指定账号类型，如沪港通传'HUGANGTONG'，深港通传'SHENGANGTONG'
-        # acc = StockAccount('1000000365','STOCK')
-        # 创建交易回调类对象，并声明接收回调
-        callback = MyXtQuantTraderCallback()
-        xt_trader.register_callback(callback)
-        # 启动交易线程
-        xt_trader.start()
-        # 建立交易连接，返回0表示连接成功
-        connect_result = xt_trader.connect()
-        print(connect_result)
-        print("query asset:")
-        asset = xt_trader.query_stock_asset(acc)
-        if asset:
-            print("asset:")
-            print("cash {0}".format(asset.cash))
+        # xttrader连接miniQMT终端
+        self.xt_trader.start()
+        if self.xt_trader.connect() == 0:
+            print('【软件终端连接成功！】')
+        else:
+            print('【软件终端连接失败！】', '\n 请运行并登录miniQMT.EXE终端。', '\n path=改成你的QMT安装路径')
+        # 订阅账户信息
+        self.ID = StockAccount(acc, 'STOCK')
+        subscribe_result = self.xt_trader.subscribe(self.ID)
+        if subscribe_result == 0:
+            print('【账户信息订阅成功！】')
+        else:
+            print('【账户信息订阅失败！】', '\n 账户配置错误，检查账号是否正确。', '\n acct=""内填加你的账号')
+            sys.exit()  # 如果运行环境，账户都没配置好，后面的代码就不执行
+
+    def setup_logger(self):
+        """配置日志记录器"""
+        # 生成日志文件名，格式为 trader_record_YYYYMMDD_HHMMSS.log
+        log_dir = "./log"
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        log_filename = os.path.join(log_dir, f"trader_record_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
+
+        # 配置日志
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s [%(levelname)s] %(message)s",
+            handlers=[
+                logging.FileHandler(log_filename, encoding='utf-8'),  # 输出到文件
+                logging.StreamHandler()  # 同时输出到控制台
+            ]
+        )
+        self.logger = logging.getLogger("XtTraderOrder")
+
+    def get_close_price_of(self, code):
+        tushare = TushareInterface()
+        daily_line = tushare.gat_realtime_data(code)
+        return daily_line.close
+
+    def get_account_profit_rate(self):
+        total_asset = self.get_total_asset()
+        print('总资产:', total_asset)
+        # 打印汇总信息
+        print('-' * 18, '【当日汇总】', '-' * 18)
+        orders_df = self.orders_df()
+        trades_df = self.trades_df()
+        positions_df = self.positions_df()
+        print(f"委托个数：{len(orders_df)}    成交个数：{len(trades_df)}    持仓数量：{len(positions_df)}")
+        # 输出DataFrame
+        print('-' * 18, "【订单信息】", '-' * 18)
+        print(orders_df if not orders_df.empty else "无委托信息")
+
+        print('-' * 18, "【成交信息】", '-' * 18)
+        print(trades_df if not trades_df.empty else "无成交信息")
+
+        print('-' * 18, "【持仓信息】", '-' * 18)
+        print(positions_df if not positions_df.empty else "无持仓信息")
         pass
 
-if __name__ == "__main__":
-    print("demo test")
-    # path为mini qmt客户端安装目录下userdata_mini路径
-    path = 'D:\\国金证券QMT交易端\\bin.x64'
-    # session_id为会话编号，策略使用方对于不同的Python策略需要使用不同的会话编号
-    session_id = 123456
-    xt_trader = XtQuantTrader(path, session_id)
-    # 创建资金账号为1000000365的证券账号对象
-    acc = StockAccount('8883252929')
-    # StockAccount可以用第二个参数指定账号类型，如沪港通传'HUGANGTONG'，深港通传'SHENGANGTONG'
-    # acc = StockAccount('1000000365','STOCK')
-    # 创建交易回调类对象，并声明接收回调
-    callback = MyXtQuantTraderCallback()
-    xt_trader.register_callback(callback)
-    # 启动交易线程
-    xt_trader.start()
-    # 建立交易连接，返回0表示连接成功
-    connect_result = xt_trader.connect()
-    print(connect_result)
-    xt_trader.run_forever()
-    # # 对交易回调进行订阅，订阅后可以收到交易主推，返回0表示订阅成功
-    # subscribe_result = xt_trader.subscribe(acc)
-    # print(subscribe_result)
-    # stock_code = '600000.SH'
-    # # 使用指定价下单，接口返回订单编号，后续可以用于撤单操作以及查询委托状态
-    # print("order using the fix price:")
-    # fix_result_order_id = xt_trader.order_stock(acc, stock_code, xtconstant.STOCK_BUY, 200, xtconstant.FIX_PRICE, 10.5, 'strategy_name', 'remark')
-    # print(fix_result_order_id)
-    # # 使用订单编号撤单
-    # print("cancel order:")
-    # cancel_order_result = xt_trader.cancel_order_stock(acc, fix_result_order_id)
-    # print(cancel_order_result)
-    # # 使用异步下单接口，接口返回下单请求序号seq，seq可以和on_order_stock_async_response的委托反馈response对应起来
-    # print("order using async api:")
-    # async_seq = xt_trader.order_stock_async(acc, stock_code, xtconstant.STOCK_BUY, 200, xtconstant.FIX_PRICE, 10.5, 'strategy_name', 'remark')
-    # print(async_seq)
-    # # 查询证券资产
-    # print("query asset:")
-    # asset = xt_trader.query_stock_asset(acc)
-    # if asset:
-    #     print("asset:")
-    #     print("cash {0}".format(asset.cash))
-    # # 根据订单编号查询委托
-    # print("query order:")
-    # order = xt_trader.query_stock_order(acc, fix_result_order_id)
-    # if order:
-    #     print("order:")
-    #     print("order {0}".format(order.order_id))
-    # # 查询当日所有的委托
-    # print("query orders:")
-    # orders = xt_trader.query_stock_orders(acc)
-    # print("orders:", len(orders))
-    # if len(orders) != 0:
-    #     print("last order:")
-    #     print("{0} {1} {2}".format(orders[-1].stock_code, orders[-1].order_volume, orders[-1].price))
-    # # 查询当日所有的成交
-    # print("query trade:")
-    # trades = xt_trader.query_stock_trades(acc)
-    # print("trades:", len(trades))
-    # if len(trades) != 0:
-    #     print("last trade:")
-    #     print("{0} {1} {2}".format(trades[-1].stock_code, trades[-1].traded_volume, trades[-1].traded_price))
-    # # 查询当日所有的持仓
-    # print("query positions:")
-    # positions = xt_trader.query_stock_positions(acc)
-    # print("positions:", len(positions))
-    # if len(positions) != 0:
-    #     print("last position:")
-    #     print("{0} {1} {2}".format(positions[-1].account_id, positions[-1].stock_code, positions[-1].volume))
-    # # 根据股票代码查询对应持仓
-    # print("query position:")
-    # position = xt_trader.query_stock_position(acc, stock_code)
-    # if position:
-    #     print("position:")
-    #     print("{0} {1} {2}".format(position.account_id, position.stock_code, position.volume))
-    # # 阻塞线程，接收交易推送
+    def get_total_asset(self):
+        # 打印账户信息
+        asset = self.xt_trader.query_stock_asset(self.ID)
+        return asset.total_asset
+
+    def get_cash(self):
+        # 打印账户信息
+        asset = self.xt_trader.query_stock_asset(self.ID)
+        return asset.cash
+
+    # 委托信息
+    def orders_df(self):
+        orders_df = pd.DataFrame([(order.stock_code, order.order_volume, order.price, order.order_id, order.status_msg,
+                                   datetime.fromtimestamp(order.order_time).strftime('%H:%M:%S'))
+                                  for order in self.xt_trader.query_stock_orders(self.ID)],
+                                 columns=['证券代码', '委托数量', '委托价格', '订单编号', '委托状态', '报单时间'])
+        return orders_df
+
+    # 成交信息
+    def trades_df(self):
+        trades_df = pd.DataFrame([(trade.stock_code, trade.traded_volume, trade.traded_price, trade.traded_amount,
+                                   trade.order_id, trade.traded_id,
+                                   datetime.fromtimestamp(trade.traded_time).strftime('%H:%M:%S'))
+                                  for trade in self.xt_trader.query_stock_trades(self.ID)],
+                                 columns=['证券代码', '成交数量', '成交均价', '成交金额', '订单编号', '成交编号',
+                                          '成交时间'])
+        return trades_df
+
+    # 持仓信息
+    def positions_df(self):
+        positions_df = pd.DataFrame(
+            [(position.stock_code, position.volume, position.can_use_volume, position.frozen_volume,
+              position.open_price, position.market_value, position.on_road_volume,
+              position.yesterday_volume)
+             for position in self.xt_trader.query_stock_positions(self.ID)],
+            columns=['证券代码', '持仓数量', '可用数量', '冻结数量', '开仓价格', '持仓市值',
+                     '在途股份', '昨夜持股'])
+        return positions_df
+
+    def get_holdings(self):
+        df = self.positions_df()
+        non_zero_positions = df[df['持仓数量'] != 0]
+        # 获取这些行的证券代码
+        stock_codes = non_zero_positions['证券代码'].tolist()
+        print(stock_codes)
+        return stock_codes
+
+    def buy_stock(self, code, price, cash):
+        if self.get_position_pct() > 70:
+            self.logger.info(f'position is over 70 not allowed to buy,buy code:{code},number:{100},price:{price}')
+            return False
+        number = 100
+        if price * 100 > cash:
+            self.logger.info(f'no enough cash,buy code:{code},number:{number},price:{price}')
+            return False
+        print(f'buy code:{code},number:{number},price:{price}')
+        self.xt_trader.order_stock(self.ID, code, xtconstant.STOCK_BUY, number, xtconstant.FIX_PRICE, price)
+        return True
+
+    def sell_stock(self, code, number, price):
+        self.logger.info(f'sell code:{code},number:{number},price:{price}')
+        self.xt_trader.order_stock(self.ID, code, xtconstant.STOCK_SELL, number, xtconstant.FIX_PRICE, price)
+
+    def get_position_pct(self):
+        df = self.positions_df()
+        non_zero_positions = df[df['持仓数量'] != 0]
+        # 将持仓市值进行相加
+        total_market_value = non_zero_positions['持仓市值'].sum()
+        total_asset = self.get_total_asset()
+        return round(total_market_value / total_asset * 100, 1)
+#     # ——————————————————————————————————————————————————————————————————————————————————————————————————————
+#
+#
+# # 设置你的path=''QMT安装路径信息，acc=''引号内填入你的账号
+# path = r'D:\QMT\userdata_mini\userdata_mini'
+# acc = "8883252929"
+# # 创建交易对象
+# session_id = int(time.time())
+# xt_trader = XtQuantTrader(path, session_id)
+#
+# # xttrader连接miniQMT终端
+# xt_trader.start()
+# if xt_trader.connect() == 0:
+#     print('【软件终端连接成功！】')
+# else:
+#     print('【软件终端连接失败！】', '\n 请运行并登录miniQMT.EXE终端。', '\n path=改成你的QMT安装路径')
+# # 订阅账户信息
+# ID = StockAccount(acc, 'STOCK')
+# subscribe_result = xt_trader.subscribe(ID)
+# if subscribe_result == 0:
+#     print('【账户信息订阅成功！】')
+# else:
+#     print('【账户信息订阅失败！】', '\n 账户配置错误，检查账号是否正确。', '\n acct=""内填加你的账号')
+#     sys.exit()  # 如果运行环境，账户都没配置好，后面的代码就不执行
+# # ——————————————————————————————————————————————————————————————————————————————————————————————————————
+# # 打印账户信息
+# asset = xt_trader.query_stock_asset(ID)
+# print('-' * 18, '【{0}】'.format(asset.account_id), '-' * 18)
+# if asset: print(f"资产总额: {asset.total_asset}\n"
+#                 f"持仓市值：{asset.market_value}\n"
+#                 f"可用资金：{asset.cash}\n"
+#                 f"在途资金：{asset.frozen_cash}")
+#
+#
+# # time.sleep(1) #演示用
+# # #——————————————————————————————————————————————————————————————————————————————————————————————————————
+# # # ！！！注意，以下代码将启动账户进行交易，谨慎使用
+# # POOL = '512660.SH'  #设置股票池（POOL）
+# # BP = 0.834         #买入价格(BP)
+# # BQ = 600      #买入数量(BQ)
+# # CASH = asset.cash
+# # BQALL = int((CASH / BP) // 1 * 100)
+# #
+# # SP = 2.55            #卖出价格(SP)
+# # SQ = 2100          #卖出数量(SQ)
+# #
+# # SN = "策略"       #策略名称
+# # PS = "备注"       #备注
+# # # ！！！注意，以下代码将启动账户进行交易，谨慎使用
+# # #下面两行删除"#"井号后，运行将以BP = “ ”的价格委托买入BQ = “ ” 股的，股票池为POOL = “ ” 执行交易买入/卖出委托，请谨慎使用
+# #
+# # #order_id = xt_trader.order_stock(ID, POOL, xtconstant.STOCK_BUY, BQALL, xtconstant.FIX_PRICE, BP) #买入
+# # #order_id2 = xt_trader.order_stock(ID, POOL, xtconstant.STOCK_SELL, SQ, xtconstant.FIX_PRICE, SP) #卖出
+# # #——————————————————————————————————————————————————————————————————————————————————————————————————————
+# # 委托信息
+# def orders_df():
+#     orders_df = pd.DataFrame([(order.stock_code, order.order_volume, order.price, order.order_id, order.status_msg,
+#                                datetime.fromtimestamp(order.order_time).strftime('%H:%M:%S'))
+#                               for order in xt_trader.query_stock_orders(ID)],
+#                              columns=['证券代码', '委托数量', '委托价格', '订单编号', '委托状态', '报单时间'])
+#     return orders_df
+#
+#
+# # 成交信息
+# def trades_df():
+#     trades_df = pd.DataFrame([(trade.stock_code, trade.traded_volume, trade.traded_price, trade.traded_amount,
+#                                trade.order_id, trade.traded_id,
+#                                datetime.fromtimestamp(trade.traded_time).strftime('%H:%M:%S'))
+#                               for trade in xt_trader.query_stock_trades(ID)],
+#                              columns=['证券代码', '成交数量', '成交均价', '成交金额', '订单编号', '成交编号',
+#                                       '成交时间'])
+#     return trades_df
+#
+#
+# # 持仓信息
+# def positions_df():
+#     positions_df = pd.DataFrame([(position.stock_code, position.volume, position.can_use_volume, position.frozen_volume,
+#                                   position.open_price, position.market_value, position.on_road_volume,
+#                                   position.yesterday_volume)
+#                                  for position in xt_trader.query_stock_positions(ID)],
+#                                 columns=['证券代码', '持仓数量', '可用数量', '冻结数量', '开仓价格', '持仓市值',
+#                                          '在途股份', '昨夜持股'])
+#     return positions_df
+#
+#
+# # 打印汇总信息
+# print('-' * 18, '【当日汇总】', '-' * 18)
+# orders_df = orders_df()
+# trades_df = trades_df()
+# positions_df = positions_df()
+# print(f"委托个数：{len(orders_df)}    成交个数：{len(trades_df)}    持仓数量：{len(positions_df)}")
+# # 输出DataFrame
+# print('-' * 18, "【订单信息】", '-' * 18)
+# print(orders_df if not orders_df.empty else "无委托信息")
+#
+# print('-' * 18, "【成交信息】", '-' * 18)
+# print(trades_df if not trades_df.empty else "无成交信息")
+#
+# print('-' * 18, "【持仓信息】", '-' * 18)
+# print(positions_df if not positions_df.empty else "无持仓信息")

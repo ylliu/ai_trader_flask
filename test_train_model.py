@@ -47,3 +47,10 @@ class TestTrainModel(TestCase):
     def test_save_data(self):
         train_model = TrainModel()
         train_model.save_data2('sz300547', 241)
+
+    def test_get_newest_price(self):
+        train_model = TrainModel()
+        train_model.save_data2('sz300547', 241)
+        current_time = datetime.datetime(2025, 1, 9, 14, 59, 0)
+        current_time = current_time.replace(second=0, microsecond=0)
+        train_model.get_newest_price('sz300547', current_time, 100)

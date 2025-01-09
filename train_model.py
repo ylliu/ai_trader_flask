@@ -13,6 +13,7 @@ from sklearn.preprocessing import MinMaxScaler
 from Ashare import get_price
 from trading_record import TradingRecord
 from tushare_interface import TushareInterface
+from xt_trader_order import XtTraderOrder
 
 # 获取当前日期和时间，并格式化为字符串
 current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -60,6 +61,7 @@ class TrainModel:
         self.MAX_SELL_PERIOD = 80
         self.to_buy_list = []
         self.to_sell_list = []
+
 
     def create_directories_if_not_exists(self):
         # 定义要创建的文件夹路径
@@ -241,7 +243,6 @@ class TrainModel:
                     self.logger.info(f"Message for {name}-{action} was already sent in the last 5 minutes. Skipping...")
                     self.send_message_to_dingding(name, action, date_time_obj.strftime("%H:%M"))
                     return None, None
-
                 self.send_message_to_dingding(name, action, date_time_obj.strftime("%H:%M"))
                 time.sleep(0.1)
             # print('code:', code)
@@ -277,6 +278,11 @@ class TrainModel:
         df.to_csv(csv_file_path, index=True)  # index=False表示不保存DataFrame的索引
         print(f'数据已保存至 {csv_file_path}')
         return csv_file_path
+
+    def get_newest_price(self, stock_code, time, data_count):
+        df = self.get_time_series_data('%s.csv' % stock_code, time, data_count)
+
+        print(df['Price'].iloc[-1])
 
     def save_data2(self, code, size):
         df = get_price(code, frequency='1m', count=size)  # 支持'1m','5m','15m','30m','60m'

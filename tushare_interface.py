@@ -571,6 +571,16 @@ class TushareInterface(DataInterfaceBase):
             # 如果后缀既不是 .SZ 也不是 .SH，可以选择返回原始代码或者抛出异常
             return None  # 可以根据需要进行错误处理
 
+    def convert_stock_code_to_dot_s(self, code):
+        """
+              将传入的股票代码格式转换为带有.SZ或者.SH结尾的格式
+              """
+        if code.startswith('sz'):
+            return code[2:] + '.SZ'
+        elif code.startswith('sh'):
+            return code[2:] + '.SH'
+        return code  # 如果不符合预期格式，直接返回原代码（可根据实际需求调整此处逻辑）
+
     def get_code_by_name(self, name):
         pro = ts.pro_api()
         df = pro.stock_basic(name=name)

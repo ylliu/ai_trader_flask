@@ -17,6 +17,7 @@ from database import db
 
 from tushare_interface import TushareInterface
 from user import User, LoginRecord
+from xt_trader_order import XtTraderOrder
 
 WIN = sys.platform.startswith('win')
 if WIN:  # 如果是 Windows 系统，使用三个斜线
@@ -36,6 +37,8 @@ monitor_thread = None
 # 配置 JWT 密钥
 app.config['JWT_SECRET_KEY'] = 'your-secret-key'
 jwt = JWTManager(app)
+
+xt_trader_order = XtTraderOrder()
 
 
 # 数据存储路径
@@ -148,7 +151,7 @@ def sell_point_playback(name):
         data_count = max(clock.count, 20)
         data_count = min(data_count, train_model.MAX_SELL_PERIOD)
         df = train_model.get_time_series_data('%s.csv' % stock_code, time, data_count)
-        sell_point, _ = train_model.code_trade_point_use_date(df, name, False, train_model.SELL_POINT)
+        sell_point, _ = train_model.code_trade_point_use_date(df, name, False, train_model.SELL_POINT, code)
         if sell_point is not None:
             sell_points.append(sell_point)
         time = clock.next()
@@ -280,18 +283,24 @@ def monitor_stocks():
 
 
 def monitor_my_holding_stocks_sell_point(current_time, train_model):
-    stocks = Holding.query.all()
-    for stock in stocks:
-        print(stock.stock_name)
-        train_model.save_data2(stock.stock_code, 500)
+    tushare_interface = TushareInterface()
+    stocks = xt_trader_order.get_holdings()
+    for stock_code in stocks:
+        stock_name = tushare_interface.get_name(stock_code)
+        stock_code = tushare_interface.convert_stock_code(stock_code)
+        print(stock_name)
+        train_model.save_data2(stock_code, 500)
         select_count = train_model.select_count2(current_time)
         data_count_sell = max(20, select_count)
         data_count_sell = min(data_count_sell, train_model.MAX_SELL_PERIOD)
         # 在这里添加监控逻辑
-        df_sell = train_model.get_time_series_data('%s.csv' % stock.stock_code, current_time,
+        df_sell = train_model.get_time_series_data('%s.csv' % stock_code, current_time,
                                                    data_count_sell)
-        sell_point, sell_record = train_model.code_trade_point_use_date(df_sell, stock.stock_name, True,
+        sell_point, sell_record = train_model.code_trade_point_use_date(df_sell, stock_name, True,
                                                                         train_model.SELL_POINT)
+        if sell_point is not None:
+            converted_code = TushareInterface().convert_stock_code_to_dot_s(stock_code)
+            xt_trader_order.sell_stock(converted_code, 100, df_sell['Price'].iloc[-1])
         insert_trade_record(sell_record)
 
 
@@ -305,6 +314,10 @@ def monitor_selected_stocks_buy_point(current_time, train_model):
         df_buy = train_model.get_time_series_data('%s.csv' % stock.stock_code, current_time,
                                                   data_count_buy)
         buy_point, buy_record = train_model.code_trade_point_use_date(df_buy, stock.name, True, train_model.BUY_POINT)
+        if buy_point is not None:
+            converted_code = TushareInterface().convert_stock_code_to_dot_s(stock.stock_code)
+            print('buy:', converted_code)
+            xt_trader_order.buy_stock(converted_code, df_buy['Price'].iloc[-1], xt_trader_order.get_cash())
         insert_trade_record(buy_record)
 
 

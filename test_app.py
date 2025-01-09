@@ -2,7 +2,8 @@ import datetime
 from unittest import TestCase
 
 from app import get_time_share_data, sell_point_playback, add_stock, app, delete_stock, get_all_stocks, \
-    buy_point_playback, monitor_stocks, register, monitor_holdings_stocks, insert_trade_record
+    buy_point_playback, monitor_stocks, register, monitor_holdings_stocks, insert_trade_record, \
+    monitor_my_holding_stocks_sell_point, monitor_selected_stocks_buy_point
 from train_model import TrainModel, TraderRecord
 
 
@@ -53,4 +54,16 @@ class Test(TestCase):
             except Exception as e:
                 print(e)
 
+    def test_monitor_my_holding_stocks_sell_point(self):
+        with app.app_context():
+            current_time = datetime.datetime(2025, 1, 9, 14, 49, 00)
+            train_model = TrainModel()
+            train_model.retrain_with_all_sell_data()
+            monitor_my_holding_stocks_sell_point(current_time, train_model)
 
+    def test_monitor_selected_stocks_buy_point(self):
+        with app.app_context():
+            current_time = datetime.datetime(2025, 1, 9, 13, 16, 00)
+            train_model = TrainModel()
+            train_model.retrain_with_all_buy_data()
+            monitor_selected_stocks_buy_point(current_time, train_model)
