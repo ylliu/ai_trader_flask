@@ -278,7 +278,7 @@ def monitor_stocks():
             current_time1 = datetime.datetime.now()
             current_time_str = current_time.strftime('%H:%M')
             current_time = current_time.replace(second=0, microsecond=0)
-            if '09:00' <= current_time_str < '9:01':
+            if '09:00' <= current_time_str < '09:01':
                 train_model.send_message_to_dingding("监控程序在线中", "ON_LINE", "00:00")
             if '09:30' <= current_time_str < '11:30' or '13:01' <= current_time_str < '15:00':
                 second = current_time1.second
