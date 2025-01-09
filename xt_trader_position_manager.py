@@ -29,7 +29,7 @@ session = Session()
 from datetime import datetime
 
 
-class XtTrader:
+class XtTraderPositionManager:
     def __init__(self):
         # 初始化数据库会话
         self.session = session

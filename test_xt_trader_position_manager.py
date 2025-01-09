@@ -1,15 +1,15 @@
 from unittest import TestCase
 
-from xt_trader import XtTrader, AccountProfitRate
+from xt_trader_position_manager import XtTraderPositionManager, AccountProfitRate
 
 
-class TestXtTrader(TestCase):
+class TestXtTraderPositionManager(TestCase):
     def setUp(self):
         """
         每个测试用例运行之前执行的初始化方法。
         可以在这里初始化 XtTrader 实例。
         """
-        self.xt_trader = XtTrader()
+        self.xt_trader = XtTraderPositionManager()
 
     def tearDown(self):
         """
