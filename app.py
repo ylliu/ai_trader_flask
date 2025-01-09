@@ -280,13 +280,15 @@ def monitor_stocks():
             current_time1 = datetime.datetime.now()
             current_time_str = current_time.strftime('%H:%M')
             current_time = current_time.replace(second=0, microsecond=0)
+            if '09:00' <= current_time_str < '9:01':
+                train_model.send_message_to_dingding("监控程序在线中", "ON_LINE", "00:00")
             if '09:30' <= current_time_str < '11:30' or '13:01' <= current_time_str < '15:00':
                 second = current_time1.second
                 if second != 5:
                     time.sleep(0.8)
                     continue
                 minute = current_time1.minute
-                if minute % 10 == 0:
+                if minute % 20 == 0:
                     train_model.send_message_to_dingding("监控程序在线中", "ON_LINE", "00:00")
                     monitor_holdings_stocks(current_time, train_model)
                 monitor_selected_stocks_buy_point(current_time, train_model)

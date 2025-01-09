@@ -43,6 +43,7 @@ class TestTrainModel(TestCase):
         current_time = datetime.datetime.strptime('2024-12-25 15:00:00', '%Y-%m-%d %H:%M:%S')
         count = train_model.select_count2(current_time)
         self.assertEqual(240, count)
+
     def test_save_data(self):
         train_model = TrainModel()
         train_model.save_data2('sz300547', 241)

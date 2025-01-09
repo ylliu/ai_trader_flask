@@ -19,7 +19,7 @@ class GridStrategy2:
         step = (max_price - min_price) / self.grid_levels
         self.grids = [min_price + step * i for i in range(self.grid_levels + 1)]
 
-    def check_price(self, price, type, last_price, pre_close):
+    def check_price(self, price, type, pre_close):
         """
         检查当前价格并触发买卖
         :param price: 当前价格

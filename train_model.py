@@ -11,6 +11,7 @@ from scipy.stats import linregress
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import MinMaxScaler
 from Ashare import get_price
+from app import TradingRecord
 from tushare_interface import TushareInterface
 
 # 获取当前日期和时间，并格式化为字符串
@@ -57,6 +58,8 @@ class TrainModel:
         self.SELL_POINT_THRESHOLD = 0.64
         self.BUY_POINT_THRESHOLD = 0.64
         self.MAX_SELL_PERIOD = 80
+        self.to_buy_list = []
+        self.to_sell_list = []
 
     def create_directories_if_not_exists(self):
         # 定义要创建的文件夹路径
@@ -225,6 +228,20 @@ class TrainModel:
                 date_time_str = data_test['time'].iloc[-1]
                 date_time_obj = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S")
                 # 提取时分信息
+                five_minutes_ago = datetime.strptime(data_test['time'].iloc[-1], "%Y-%m-%d %H:%M:%S") - timedelta(
+                    minutes=5)
+                # 查询数据库
+                recent_record = TradingRecord.query.filter(
+                    TradingRecord.stock_name == name,
+                    TradingRecord.direction == action,
+                    TradingRecord.timestamp >= five_minutes_ago
+                ).first()
+
+                if recent_record:
+                    self.logger.info(f"Message for {name}-{action} was already sent in the last 5 minutes. Skipping...")
+                    self.send_message_to_dingding(name, action, date_time_obj.strftime("%H:%M"))
+                    return None, None
+
                 self.send_message_to_dingding(name, action, date_time_obj.strftime("%H:%M"))
                 time.sleep(0.1)
             # print('code:', code)
@@ -290,6 +307,8 @@ class TrainModel:
             action_text = "timeout"
         if action == "ON_LINE":
             action_text = "online"
+        if action == "INFO":
+            action_text = "5分钟内已经提醒过"
 
         data = {
             "text": f"{time} {name}提示{action_text}"
