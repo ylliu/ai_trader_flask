@@ -1,8 +1,6 @@
 import datetime
 
-from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy()  # 不绑定 app，仅定义 SQLAlchemy 实例
+from database import db  # 引入全局 db 实例
 
 
 class TradingRecord(db.Model):

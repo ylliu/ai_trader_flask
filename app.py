@@ -13,6 +13,7 @@ from SimulatedClock import SimulatedClock
 from trading_record import TradingRecord
 from train_model import TrainModel
 from flask_sqlalchemy import SQLAlchemy
+from database import db
 
 from tushare_interface import TushareInterface
 
@@ -26,7 +27,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = prefix + os.path.join(app.root_path, './data.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # 关闭对模型修改的监控
 # 在扩展类实例化前加载配置
-db = SQLAlchemy(app)
+db.init_app(app)
 CORS(app)  # 添加这一行来启用 CORS 支持
 CORS(app, resources={r"/*": {"origins": "*"}})
 stop_event = Event()
