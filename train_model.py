@@ -11,7 +11,7 @@ from scipy.stats import linregress
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import MinMaxScaler
 from Ashare import get_price
-from app import TradingRecord
+from trading_record import TradingRecord
 from tushare_interface import TushareInterface
 
 # 获取当前日期和时间，并格式化为字符串

@@ -1,18 +1,16 @@
-import json
 import sys
 import time
 import datetime
 from threading import Thread, Event
 
-from sqlalchemy import func
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import JWTManager, create_access_token
 from flask import Flask, jsonify, request
-import pandas as pd
 import os
 from flask_cors import CORS
 from Ashare import get_price
 from SimulatedClock import SimulatedClock
+from trading_record import TradingRecord
 from train_model import TrainModel
 from flask_sqlalchemy import SQLAlchemy
 
@@ -504,17 +502,6 @@ def delete_holding(stock_name):
     db.session.commit()
 
     return jsonify({"message": "持仓删除成功"}), 200
-
-
-class TradingRecord(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    stock_name = db.Column(db.String(100), nullable=False)
-    direction = db.Column(db.String(10), nullable=False)  # 'buy' or 'sell'
-    price = db.Column(db.Float, nullable=False)
-    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
-
-    def __repr__(self):
-        return f'<TradingRecord {self.stock_name} {self.direction} {self.price} {self.timestamp}>'
 
 
 def insert_trade_record(new_record):
