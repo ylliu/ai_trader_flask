@@ -56,14 +56,14 @@ class Test(TestCase):
 
     def test_monitor_my_holding_stocks_sell_point(self):
         with app.app_context():
-            current_time = datetime.datetime(2025, 1, 9, 14, 49, 00)
+            current_time = datetime.datetime(2025, 1, 9, 9, 49, 00)
             train_model = TrainModel()
             train_model.retrain_with_all_sell_data()
             monitor_my_holding_stocks_sell_point(current_time, train_model)
 
     def test_monitor_selected_stocks_buy_point(self):
         with app.app_context():
-            current_time = datetime.datetime(2025, 1, 9, 13, 16, 00)
+            current_time = datetime.datetime(2025, 1, 9, 9, 50, 00)
             train_model = TrainModel()
             train_model.retrain_with_all_buy_data()
             monitor_selected_stocks_buy_point(current_time, train_model)

@@ -284,10 +284,10 @@ def monitor_stocks():
 
 def monitor_my_holding_stocks_sell_point(current_time, train_model):
     tushare_interface = TushareInterface()
-    stocks = xt_trader_order.get_holdings()
-    for stock_code in stocks:
-        stock_name = tushare_interface.get_name(stock_code)
-        stock_code = tushare_interface.convert_stock_code(stock_code)
+    holdings_list = xt_trader_order.get_available_holdings()
+    for stock in holdings_list:
+        stock_name = tushare_interface.get_name(stock.code)
+        stock_code = tushare_interface.convert_stock_code(stock.code)
         print(stock_name)
         train_model.save_data2(stock_code, 500)
         select_count = train_model.select_count2(current_time)
@@ -322,10 +322,12 @@ def monitor_selected_stocks_buy_point(current_time, train_model):
 
 
 def monitor_holdings_stocks(current_time, train_model):
-    stocks = Holding.query.all()
-    for stock in stocks:
-        print(stock)
-        code = stock.stock_code
+    # stocks = Holding.query.all()
+    tushare_interface = TushareInterface()
+    holdings_list = xt_trader_order.get_available_holdings()
+    for stock in holdings_list:
+        code = tushare_interface.convert_stock_code(stock.code)
+        print(code)
         current_price = get_current_price(code)
         print(current_price)
         cost_price = stock.cost_price
@@ -337,8 +339,12 @@ def monitor_holdings_stocks(current_time, train_model):
 
         # 如果跌幅超过 5%，则发送提醒
         print(percentage_decrease)
-        if percentage_decrease < -5.0:
+        current_time_str = current_time.strftime('%H:%M')
+        if percentage_decrease < -5.0 and current_time_str > "10:30":
             insert_stock_name = stock.stock_name + "进入5%止损区间"
+            converted_code = TushareInterface().convert_stock_code_to_dot_s(stock.code)
+            print('sell:', converted_code)
+            xt_trader_order.sell_stock(converted_code, 100, current_price)
             train_model.send_message_to_dingding(insert_stock_name, train_model.SELL_POINT, current_time)
             time.sleep(0.1)
         # 在这里添加监控逻辑

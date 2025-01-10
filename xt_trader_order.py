@@ -18,6 +18,12 @@ from xtquant import xtdata
 from tushare_interface import TushareInterface
 
 
+class MyHoldings:
+    def __init__(self, code, cost_price):
+        self.code = code
+        self.cost_price = cost_price
+
+
 class XtTraderOrder:
     def __init__(self):
         # 设置日志
@@ -128,13 +134,14 @@ class XtTraderOrder:
                      '在途股份', '昨夜持股'])
         return positions_df
 
-    def get_holdings(self):
+    def get_available_holdings(self):
+
         df = self.positions_df()
-        non_zero_positions = df[df['持仓数量'] != 0]
-        # 获取这些行的证券代码
-        stock_codes = non_zero_positions['证券代码'].tolist()
-        print(stock_codes)
-        return stock_codes
+        # print(df)
+        available_positions = df[df['可用数量'] != 0]
+        # 创建 MyHoldings 实例列表
+        holdings_list = [MyHoldings(row['证券代码'], row['开仓价格']) for _, row in available_positions.iterrows()]
+        return holdings_list
 
     def buy_stock(self, code, price, cash):
         if self.get_position_pct() > 70:
@@ -149,6 +156,7 @@ class XtTraderOrder:
         return True
 
     def sell_stock(self, code, number, price):
+
         self.logger.info(f'sell code:{code},number:{number},price:{price}')
         self.xt_trader.order_stock(self.ID, code, xtconstant.STOCK_SELL, number, xtconstant.FIX_PRICE, price)
 
