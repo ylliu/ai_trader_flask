@@ -314,11 +314,11 @@ def monitor_selected_stocks_buy_point(current_time, train_model):
         data_count_buy = max(20, select_count)
         df_buy = train_model.get_time_series_data('%s.csv' % stock.stock_code, current_time,
                                                   data_count_buy)
+        to_buy_price = df_buy['Price'].iloc[-1]
         buy_point, buy_record = train_model.code_trade_point_use_date(df_buy, stock.name, True, train_model.BUY_POINT)
         if buy_point is not None:
             converted_code = TushareInterface().convert_stock_code_to_dot_s(stock.stock_code)
-            print('buy:', converted_code)
-            xt_trader_order.buy_stock(converted_code, df_buy['Price'].iloc[-1], xt_trader_order.get_cash())
+            xt_trader_order.buy_stock(converted_code, to_buy_price, xt_trader_order.get_cash())
         insert_trade_record(buy_record)
 
 

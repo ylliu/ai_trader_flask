@@ -151,7 +151,7 @@ class XtTraderOrder:
         if price * 100 > cash:
             self.logger.info(f'no enough cash,buy code:{code},number:{number},price:{price}')
             return False
-        print(f'buy code:{code},number:{number},price:{price}')
+        self.logger.info(f'buy code:{code},number:{number},price:{price}')
         self.xt_trader.order_stock(self.ID, code, xtconstant.STOCK_BUY, number, xtconstant.FIX_PRICE, price)
         return True
 
