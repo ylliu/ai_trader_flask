@@ -17,7 +17,7 @@ class TestXtTraderOrder(TestCase):
     def test_buy_stock_when_no_enough_cash(self):
         xt_trader_order = XtTraderOrder()
         cash = 9000
-        res = xt_trader_order.buy_stock('300570.SZ', 96.34, cash)
+        res = xt_trader_order.buy_stock('600673.SH', 12.37, cash)
         self.assertEqual(False, res)
 
     def test_buy_stock_when_have_enough_cash(self):

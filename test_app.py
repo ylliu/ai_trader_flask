@@ -32,7 +32,7 @@ class Test(TestCase):
 
     def test_buy_point_playback(self):
         with app.app_context():
-            buy_point_playback("中恒电气")
+            buy_point_playback("麦格米特")
 
     def test_monitor_stocks(self):
         with app.app_context():

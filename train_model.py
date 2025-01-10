@@ -62,7 +62,6 @@ class TrainModel:
         self.to_buy_list = []
         self.to_sell_list = []
 
-
     def create_directories_if_not_exists(self):
         # 定义要创建的文件夹路径
         base_dir = 'test'
@@ -238,7 +237,8 @@ class TrainModel:
                     TradingRecord.direction == action,
                     TradingRecord.timestamp >= five_minutes_ago
                 ).first()
-
+                # if recent_record is None:
+                #     print('no result')
                 if recent_record:
                     self.logger.info(f"Message for {name}-{action} was already sent in the last 5 minutes. Skipping...")
                     self.send_message_to_dingding(name, action, date_time_obj.strftime("%H:%M"))

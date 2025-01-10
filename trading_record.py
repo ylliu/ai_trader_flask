@@ -12,3 +12,5 @@ class TradingRecord(db.Model):
 
     def __repr__(self):
         return f'<TradingRecord {self.stock_name} {self.direction} {self.price} {self.timestamp}>'
+
+

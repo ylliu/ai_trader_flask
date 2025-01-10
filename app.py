@@ -269,6 +269,7 @@ def monitor_stocks():
                 minute = current_time1.minute
                 if minute % 20 == 0:
                     train_model.send_message_to_dingding("监控程序在线中", "ON_LINE", "00:00")
+                if minute %5==0:
                     monitor_holdings_stocks(current_time, train_model)
                 monitor_selected_stocks_buy_point(current_time, train_model)
                 monitor_my_holding_stocks_sell_point(current_time, train_model)
@@ -557,11 +558,12 @@ def get_all_trading_records():
 
 
 # with app.app_context():
-#     # db.drop_all()  # This will delete everything
+#     db.drop_all()  # This will delete everything
 #     print('11111')
 #     db.create_all()
 #     print('22222')
 
 if __name__ == "__main__":
+
     # 启动 Flask 应用
     app.run(host='0.0.0.0', port=5001)
