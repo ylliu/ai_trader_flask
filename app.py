@@ -269,7 +269,7 @@ def monitor_stocks():
                 minute = current_time1.minute
                 if minute % 20 == 0:
                     train_model.send_message_to_dingding("监控程序在线中", "ON_LINE", "00:00")
-                if minute %5==0:
+                if minute % 5 == 0:
                     monitor_holdings_stocks(current_time, train_model)
                 monitor_selected_stocks_buy_point(current_time, train_model)
                 monitor_my_holding_stocks_sell_point(current_time, train_model)
@@ -327,6 +327,7 @@ def monitor_holdings_stocks(current_time, train_model):
     tushare_interface = TushareInterface()
     holdings_list = xt_trader_order.get_available_holdings()
     for stock in holdings_list:
+        stock_name = tushare_interface.get_name(stock.code)
         code = tushare_interface.convert_stock_code(stock.code)
         print(code)
         current_price = get_current_price(code)
@@ -342,7 +343,7 @@ def monitor_holdings_stocks(current_time, train_model):
         print(percentage_decrease)
         current_time_str = current_time.strftime('%H:%M')
         if percentage_decrease < -5.0 and current_time_str > "10:30":
-            insert_stock_name = stock.stock_name + "进入5%止损区间"
+            insert_stock_name = stock_name + "进入5%止损区间"
             converted_code = TushareInterface().convert_stock_code_to_dot_s(stock.code)
             print('sell:', converted_code)
             xt_trader_order.sell_stock(converted_code, 100, current_price)
@@ -563,7 +564,33 @@ def get_all_trading_records():
 #     db.create_all()
 #     print('22222')
 
-if __name__ == "__main__":
+def start_monitor_thread():
+    """
+    程序启动时自动运行监控线程
+    """
+    global monitor_thread
+    if monitor_thread is None or not monitor_thread.is_alive():
+        stop_event.clear()  # 确保停止事件被清除
+        monitor_thread = Thread(target=monitor_stocks, daemon=True)  # 守护线程
+        monitor_thread.start()
+        print("股票监控线程已启动")
 
+
+with app.app_context():
+    start_monitor_thread()
+
+
+@app.before_request
+def before_first_request():
+    """
+    在第一个请求之前启动监控线程
+    """
+    start_monitor_thread()
+
+
+if __name__ == "__main__":
     # 启动 Flask 应用
+    # 启动监控线程
+    start_monitor_thread()
+
     app.run(host='0.0.0.0', port=5001)
