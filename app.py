@@ -1,8 +1,11 @@
 import sys
 import time
 import datetime
+from calendar import calendar, monthrange
 from threading import Thread, Event
 
+from sqlalchemy import create_engine, exc
+from sqlalchemy.orm import declarative_base, sessionmaker
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import JWTManager, create_access_token
 from flask import Flask, jsonify, request
@@ -18,6 +21,7 @@ from database import db
 from tushare_interface import TushareInterface
 from user import User, LoginRecord
 from xt_trader_order import XtTraderOrder
+from xt_trader_position_manager import AccountProfitRate, XtTraderPositionManager
 
 WIN = sys.platform.startswith('win')
 if WIN:  # 如果是 Windows 系统，使用三个斜线
@@ -558,11 +562,131 @@ def get_all_trading_records():
     ])
 
 
+# 添加收益率接口
+DATABASE_URI = 'sqlite:///trader.db'  # 替换为您的数据库 URI
+engine = create_engine(DATABASE_URI)
+Base = declarative_base()
+Session = sessionmaker(bind=engine)
+session = Session()
+
+
+@app.route('/add_return', methods=['POST'])
+def add_return():
+    try:
+        # 获取请求数据
+        data = request.get_json()
+        date_str = data.get('date')
+        profit_rate = data.get('return')
+
+        if not date_str or profit_rate is None:
+            return jsonify({'message': '日期和收益率不能为空'}), 400
+
+        # 转换日期和收益率
+        date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+        profit_rate = float(profit_rate)
+
+        # 检查是否已存在相同日期的记录
+        existing_entry = session.query(AccountProfitRate).filter_by(date=date).first()
+        if existing_entry:
+            return jsonify({'message': '该日期的收益率记录已存在'}), 400
+
+        # 添加记录到数据库
+        new_entry = AccountProfitRate(date=date, profit_rate=profit_rate)
+        session.add(new_entry)
+        session.commit()
+        return jsonify({'message': '收益率添加成功'}), 200
+
+    except exc.SQLAlchemyError as e:
+        session.rollback()
+        return jsonify({'message': '数据库操作失败', 'error': str(e)}), 500
+    except Exception as e:
+        return jsonify({'message': '添加收益率失败', 'error': str(e)}), 500
+
+
+# 获取本月收益率接口
+@app.route('/get_current_month_returns', methods=['GET'])
+def get_current_month_returns():
+    try:
+        # 获取当前日期
+        today = datetime.datetime.today()
+        year = today.year
+        month = today.month
+
+        # 计算当月的起始和结束日期
+        start_date = datetime.datetime(year, month, 1).date()
+        end_date = datetime.datetime(year, month, monthrange(year, month)[1]).date()
+
+        # 查询本月所有收益率
+        results = (
+            session.query(AccountProfitRate)
+            .filter(AccountProfitRate.date.between(start_date, end_date))
+            .order_by(AccountProfitRate.date)
+            .all()
+        )
+
+        # 转换查询结果为 JSON 格式
+        data = {entry.date.strftime('%Y-%m-%d'): entry.profit_rate for entry in results}
+        return jsonify(data), 200
+
+    except exc.SQLAlchemyError as e:
+        return jsonify({'message': '数据库操作失败', 'error': str(e)}), 500
+    except Exception as e:
+        return jsonify({'message': '获取本月收益率失败', 'error': str(e)}), 500
+
+
+@app.route('/delete_return/<date>', methods=['DELETE'])
+def delete_return(date):
+    """
+    删除指定日期的收益记录
+    """
+    try:
+        # 检查日期格式是否合法
+        try:
+            parsed_date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({'message': f'Invalid date format: {date}. Expected format: YYYY-MM-DD'}), 400
+
+        # 查询数据库
+        record = session.query(AccountProfitRate).filter_by(date=parsed_date).first()
+
+        if not record:
+            return jsonify({'message': f'No record found for date {date}'}), 404
+
+        # 删除记录
+        session.delete(record)
+        session.commit()
+        return jsonify({'message': f'Record for date {date} deleted successfully'}), 200
+
+    except exc.SQLAlchemyError as e:
+        session.rollback()  # 回滚事务以确保数据一致性
+        return jsonify({'message': 'Database operation failed', 'error': str(e)}), 500
+    except Exception as e:
+        return jsonify({'message': 'An error occurred while deleting the record', 'error': str(e)}), 500
+
+
+@app.route('/allowed_position_size', methods=['GET'])
+def allowed_position_size():
+    try:
+        # Create an instance of XtTraderPositionManager
+        position_manager = XtTraderPositionManager()
+
+        # Get the allowed positions using the method
+        allowed_positions = position_manager.allowed_positions()
+
+        # Return the allowed positions in JSON format
+        return jsonify({"size": allowed_positions})
+
+    except Exception as e:
+        # In case of error, return a failure response
+        return jsonify({"error": str(e)}), 500
+
+#
 # with app.app_context():
 #     db.drop_all()  # This will delete everything
 #     print('11111')
 #     db.create_all()
 #     print('22222')
+
 
 def start_monitor_thread():
     """

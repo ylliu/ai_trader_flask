@@ -16,6 +16,7 @@ from datetime import datetime  # 时间戳改为日期时间格式的时候使�
 from xtquant import xtdata
 
 from tushare_interface import TushareInterface
+from xt_trader_position_manager import XtTraderPositionManager
 
 
 class MyHoldings:
@@ -144,8 +145,9 @@ class XtTraderOrder:
         return holdings_list
 
     def buy_stock(self, code, price, cash):
-        if self.get_position_pct() > 70:
-            self.logger.info(f'position is over 70 not allowed to buy,buy code:{code},number:{100},price:{price}')
+        if self.get_position_pct() > 70 or self.get_position_pct() > XtTraderPositionManager().allowed_positions():
+            self.logger.info(
+                f'position is over 70 or bigger than allowed pos:{XtTraderPositionManager().allowed_positions()},not allowed to buy,buy code:{code},number:{100},price:{price}')
             return False
         number = 100
         if price * 100 > cash:
