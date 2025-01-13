@@ -44,7 +44,6 @@ jwt = JWTManager(app)
 
 xt_trader_order = XtTraderOrder()
 
-
 # 数据存储路径
 
 class MonitorStocks(db.Model):
@@ -299,13 +298,15 @@ def monitor_my_holding_stocks_sell_point(current_time, train_model):
         data_count_sell = max(20, select_count)
         data_count_sell = min(data_count_sell, train_model.MAX_SELL_PERIOD)
         # 在这里添加监控逻辑
+
         df_sell = train_model.get_time_series_data('%s.csv' % stock_code, current_time,
                                                    data_count_sell)
+        to_sell_price = df_sell['Price'].iloc[-1]
         sell_point, sell_record = train_model.code_trade_point_use_date(df_sell, stock_name, True,
                                                                         train_model.SELL_POINT)
         if sell_point is not None:
             converted_code = TushareInterface().convert_stock_code_to_dot_s(stock_code)
-            xt_trader_order.sell_stock(converted_code, 100, df_sell['Price'].iloc[-1])
+            xt_trader_order.sell_stock(converted_code, 100, to_sell_price)
         insert_trade_record(sell_record)
 
 
@@ -679,6 +680,7 @@ def allowed_position_size():
     except Exception as e:
         # In case of error, return a failure response
         return jsonify({"error": str(e)}), 500
+
 
 #
 # with app.app_context():

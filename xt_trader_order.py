@@ -17,6 +17,10 @@ from xtquant import xtdata
 
 from tushare_interface import TushareInterface
 from xt_trader_position_manager import XtTraderPositionManager
+from log import get_logger
+
+# 获取当前日期和时间，并格式化为字符串
+current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
 
 class MyHoldings:
@@ -28,7 +32,8 @@ class MyHoldings:
 class XtTraderOrder:
     def __init__(self):
         # 设置日志
-        self.setup_logger()
+        self.logger = get_logger('xt_trader', True)
+        self.logger.info('init_xt_trader')
         # ——————————————————————————————————————————————————————————————————————————————————————————————————————
         # 设置你的path=''QMT安装路径信息，acc=''引号内填入你的账号
         path = r'D:\QMT\userdata_mini\userdata_mini'
@@ -51,25 +56,6 @@ class XtTraderOrder:
         else:
             print('【账户信息订阅失败！】', '\n 账户配置错误，检查账号是否正确。', '\n acct=""内填加你的账号')
             sys.exit()  # 如果运行环境，账户都没配置好，后面的代码就不执行
-
-    def setup_logger(self):
-        """配置日志记录器"""
-        # 生成日志文件名，格式为 trader_record_YYYYMMDD_HHMMSS.log
-        log_dir = "./log"
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        log_filename = os.path.join(log_dir, f"trader_record_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
-
-        # 配置日志
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s [%(levelname)s] %(message)s",
-            handlers=[
-                logging.FileHandler(log_filename, encoding='utf-8'),  # 输出到文件
-                logging.StreamHandler()  # 同时输出到控制台
-            ]
-        )
-        self.logger = logging.getLogger("XtTraderOrder")
 
     def get_close_price_of(self, code):
         tushare = TushareInterface()
@@ -145,9 +131,9 @@ class XtTraderOrder:
         return holdings_list
 
     def buy_stock(self, code, price, cash):
-        if self.get_position_pct() > 70 or self.get_position_pct() > XtTraderPositionManager().allowed_positions():
+        if self.get_position_pct() > 70 or self.get_position_pct() > XtTraderPositionManager().allowed_positions() * 100:
             self.logger.info(
-                f'position is over 70 or bigger than allowed pos:{XtTraderPositionManager().allowed_positions()},not allowed to buy,buy code:{code},number:{100},price:{price}')
+                f'position:{self.get_position_pct()} is over 70 or bigger than allowed pos:{XtTraderPositionManager().allowed_positions() * 100},not allowed to buy,buy code:{code},number:{100},price:{price}')
             return False
         number = 100
         if price * 100 > cash:

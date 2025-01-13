@@ -15,24 +15,7 @@ from trading_record import TradingRecord
 from tushare_interface import TushareInterface
 from xt_trader_order import XtTraderOrder
 
-# 获取当前日期和时间，并格式化为字符串
-current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-
-# 构造日志文件名
-log_filename = f'./log/ai_trader_{current_time}.log'
-import os
-
-log_folder = 'log'
-# 检查文件夹是否存在
-if not os.path.exists(log_folder):
-    # 如果不存在则创建文件夹
-    os.makedirs(log_folder)
-    print(f"文件夹 '{log_folder}' 已创建。")
-else:
-    print(f"文件夹 '{log_folder}' 已存在。")
-
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s', filename=log_filename)
+from log import get_logger
 
 
 class TraderRecord:
@@ -55,7 +38,7 @@ class TrainModel:
         self.SELL_POINT = "Sell_Point"
         self.buy_model_file = None
         self.create_directories_if_not_exists()
-        self.logger = logging.getLogger(__name__)  # 获取一个以当前模块名命名的日志器，也可自定义名称
+        self.logger = get_logger("ai_trader_data", False)
         self.SELL_POINT_THRESHOLD = 0.64
         self.BUY_POINT_THRESHOLD = 0.64
         self.MAX_SELL_PERIOD = 80
