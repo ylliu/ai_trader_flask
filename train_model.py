@@ -45,6 +45,15 @@ class TrainModel:
         self.to_buy_list = []
         self.to_sell_list = []
 
+    def set_buy_threshold(self, buy_threshold):
+        self.BUY_POINT_THRESHOLD = buy_threshold
+
+    def set_sell_threshold(self, sell_threshold):
+        self.SELL_POINT_THRESHOLD = sell_threshold
+
+    def get_threshold(self):
+        return self.BUY_POINT_THRESHOLD, self.SELL_POINT_THRESHOLD
+
     def create_directories_if_not_exists(self):
         # 定义要创建的文件夹路径
         base_dir = 'test'

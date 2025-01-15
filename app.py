@@ -14,6 +14,7 @@ from flask_cors import CORS
 from Ashare import get_price
 from SimulatedClock import SimulatedClock
 from holding import Holding
+from market_data import MarketData
 from trading_record import TradingRecord
 from train_model import TrainModel
 from database import db
@@ -43,6 +44,7 @@ app.config['JWT_SECRET_KEY'] = 'your-secret-key'
 jwt = JWTManager(app)
 
 xt_trader_order = XtTraderOrder()
+
 
 # 数据存储路径
 
@@ -256,6 +258,7 @@ def monitor_stocks():
         train_model = TrainModel()
         train_model.retrain_with_all_sell_data()
         train_model.retrain_with_all_buy_data()
+        market_data = MarketData()
         while not stop_event.is_set():
             start_time = time.time()
             current_time = datetime.datetime.now()
@@ -269,6 +272,11 @@ def monitor_stocks():
                 if second != 5:
                     time.sleep(0.8)
                     continue
+                market_data.get_all_market_info()
+                train_model.set_buy_threshold(market_data.calc_buy_threshold())
+                train_model.set_sell_threshold(market_data.calc_sell_threshold())
+                print('buy:', market_data.calc_sell_threshold())
+                print('buy:', market_data.calc_sell_threshold())
                 minute = current_time1.minute
                 if minute % 20 == 0:
                     train_model.send_message_to_dingding("监控程序在线中", "ON_LINE", "00:00")

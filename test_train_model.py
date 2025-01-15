@@ -54,3 +54,15 @@ class TestTrainModel(TestCase):
         current_time = datetime.datetime(2025, 1, 9, 14, 59, 0)
         current_time = current_time.replace(second=0, microsecond=0)
         train_model.get_newest_price('sz300547', current_time, 100)
+
+    def test_set_buy_threshold(self):
+        train_model = TrainModel()
+        buy_threshold, sell_threshold = train_model.get_threshold()
+        self.assertEqual(0.64, buy_threshold)
+        self.assertEqual(0.64, sell_threshold)
+        train_model.set_buy_threshold(0.68)
+        train_model.set_sell_threshold(0.60)
+        buy_threshold, sell_threshold = train_model.get_threshold()
+        self.assertEqual(0.68, buy_threshold)
+        self.assertEqual(0.60, sell_threshold)
+
