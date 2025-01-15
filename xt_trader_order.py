@@ -150,6 +150,7 @@ class XtTraderOrder:
 
     def get_position_pct(self):
         df = self.positions_df()
+        print(df)
         non_zero_positions = df[df['持仓数量'] != 0]
         # 将持仓市值进行相加
         total_market_value = non_zero_positions['持仓市值'].sum()
