@@ -35,3 +35,10 @@ class TestXtTraderOrder(TestCase):
         xt_trader_order = XtTraderOrder()
         pct = xt_trader_order.get_position_pct()
         self.assertEqual(57.7, pct)
+
+    def test_get_stock_position_pct(self):
+        xt_trader_order = XtTraderOrder()
+        pct = xt_trader_order.get_stock_position_pct('002851.SZ')
+        self.assertEqual(22.8, pct)
+        pct = xt_trader_order.get_stock_position_pct('603068.SZ')
+        self.assertEqual(0.0, pct)

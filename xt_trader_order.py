@@ -131,6 +131,10 @@ class XtTraderOrder:
         return holdings_list
 
     def buy_stock(self, code, price, cash):
+        if self.get_stock_position_pct(code) > 20:
+            self.logger.info(
+                f'single code position:{self.get_stock_position_pct(code)} is over 20,not allowed to buy,buy code:{code},number:{100},price:{price}')
+            return False
         if self.get_position_pct() > 70 or self.get_position_pct() > XtTraderPositionManager().allowed_positions() * 100:
             self.logger.info(
                 f'position:{self.get_position_pct()} is over 70 or bigger than allowed pos:{XtTraderPositionManager().allowed_positions() * 100},not allowed to buy,buy code:{code},number:{100},price:{price}')
@@ -156,6 +160,16 @@ class XtTraderOrder:
         total_market_value = non_zero_positions['持仓市值'].sum()
         total_asset = self.get_total_asset()
         return round(total_market_value / total_asset * 100, 1)
+
+    def get_stock_position_pct(self, code):
+        total_asset = self.get_total_asset()
+        df = self.positions_df()
+        stock_row = df[df["证券代码"] == code]
+        if not stock_row.empty:
+            stock_value = stock_row["持仓市值"].iloc[0]
+            return round(stock_value / total_asset * 100, 1)
+        else:
+            return 0.0
 #     # ——————————————————————————————————————————————————————————————————————————————————————————————————————
 #
 #
