@@ -15,6 +15,7 @@ from Ashare import get_price
 from SimulatedClock import SimulatedClock
 from holding import Holding
 from market_data import MarketData
+from strategy_config import StrategyConfig
 from trading_record import TradingRecord
 from train_model import TrainModel
 from database import db
@@ -319,6 +320,12 @@ def monitor_my_holding_stocks_sell_point(current_time, train_model):
 
 
 def monitor_selected_stocks_buy_point(current_time, train_model):
+    db.session.expire_all()  # 清除缓存
+    config = StrategyConfig.query.first()
+    print(config)
+    print("is_sell_only2:", config.is_sell_only)
+    if config.is_sell_only:
+        return
     stocks = MonitorStocks.query.all()
     for stock in stocks:
         print(stock.name)
@@ -690,9 +697,47 @@ def allowed_position_size():
         return jsonify({"error": str(e)}), 500
 
 
+# 获取当前策略配置
+@app.route('/get_strategy_config', methods=['GET'])
+def get_strategy_config():
+    try:
+        config = StrategyConfig.query.first()
+        if config:
+            return jsonify(config.to_dict()), 200
+        else:
+            return jsonify({"message": "No strategy configuration found."}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# 更新策略配置
+@app.route('/strategy_config', methods=['POST'])
+def update_strategy_config():
+    try:
+        data = request.get_json()
+        if "isSellOnly" not in data:
+            return jsonify({"error": "Missing 'isSellOnly' field."}), 400
+
+        is_sell_only = data["isSellOnly"]
+        config = StrategyConfig.query.first()
+
+        if not config:
+            # 如果配置不存在，创建新配置
+            config = StrategyConfig(is_sell_only=is_sell_only)
+            db.session.add(config)
+        else:
+            # 更新已有配置
+            config.is_sell_only = is_sell_only
+
+        db.session.commit()
+        return jsonify({"message": "Strategy configuration updated successfully."}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 #
 # with app.app_context():
-#     db.drop_all()  # This will delete everything
+#     # db.drop_all()  # This will delete everything
 #     print('11111')
 #     db.create_all()
 #     print('22222')
