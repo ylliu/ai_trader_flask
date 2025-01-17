@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import akshare as ak
 
 
@@ -32,3 +34,20 @@ class MarketData:
             return 0.60
         else:
             return 0.64
+
+    def get_up_data(self, date):
+        stock_zt_pool_em_df = ak.stock_zt_pool_em(date=date)
+        print(stock_zt_pool_em_df)
+
+    def get_down_data(self):
+        current_date = datetime.now().date()
+        # 将日期转换为字符串，格式为 YYYYMMDD
+        date_str = current_date.strftime("%Y%m%d")
+        stock_dt_pool_em_df = ak.stock_zt_pool_dtgc_em(date=date_str)
+        return len(stock_dt_pool_em_df)
+
+    def calc_stop_loss_time(self):
+        stop_loss_time = '14:40'
+        if self.get_down_data() > 30:
+            stop_loss_time = "10:30"
+        return stop_loss_time

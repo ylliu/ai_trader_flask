@@ -362,8 +362,9 @@ def monitor_holdings_stocks(current_time, train_model):
         # 如果跌幅超过 5%，则发送提醒
         print(percentage_decrease)
         current_time_str = current_time.strftime('%H:%M')
-        if percentage_decrease < -6.0 and current_time_str >= "10:30":
-            insert_stock_name = stock_name + "进入5%止损区间"
+        stop_loss_time = MarketData().calc_stop_loss_time()
+        if percentage_decrease < -6.0 and current_time_str >= stop_loss_time:
+            insert_stock_name = stock_name + "进入6%止损区间"
             converted_code = TushareInterface().convert_stock_code_to_dot_s(stock.code)
             print('sell:', converted_code)
             number = xt_trader_order.get_stock_position_number(converted_code)
