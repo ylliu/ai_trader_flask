@@ -315,6 +315,8 @@ def monitor_my_holding_stocks_sell_point(current_time, train_model):
                                                                         train_model.SELL_POINT)
         if sell_point is not None:
             converted_code = TushareInterface().convert_stock_code_to_dot_s(stock_code)
+            number = xt_trader_order.get_stock_position_number(converted_code)
+            # sell_number = number / 2
             xt_trader_order.sell_stock(converted_code, 100, to_sell_price)
         insert_trade_record(sell_record)
 
@@ -368,7 +370,8 @@ def monitor_holdings_stocks(current_time, train_model):
             converted_code = TushareInterface().convert_stock_code_to_dot_s(stock.code)
             print('sell:', converted_code)
             number = xt_trader_order.get_stock_position_number(converted_code)
-            sell_number = number / 2
+            # sell_number = number / 2
+            sell_number = 100
             xt_trader_order.sell_stock(converted_code, sell_number, current_price)
             train_model.send_message_to_dingding(insert_stock_name, train_model.SELL_POINT, current_time)
             time.sleep(0.1)
