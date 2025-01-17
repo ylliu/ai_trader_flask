@@ -171,6 +171,16 @@ class XtTraderOrder:
             return round(stock_value / total_asset * 100, 1)
         else:
             return 0.0
+
+    def get_stock_position_number(self, code):
+        df = self.positions_df()
+        print(df)
+        stock_row = df[df["证券代码"] == code]
+        if not stock_row.empty:
+            stock_number = stock_row["可用数量"].iloc[0]
+            return stock_number
+        else:
+            return 0
 #     # ——————————————————————————————————————————————————————————————————————————————————————————————————————
 #
 #
