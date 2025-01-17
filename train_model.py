@@ -222,7 +222,7 @@ class TrainModel:
                 date_time_obj = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S")
                 # 提取时分信息
                 five_minutes_ago = datetime.strptime(data_test['time'].iloc[-1], "%Y-%m-%d %H:%M:%S") - timedelta(
-                    minutes=5)
+                    minutes=2)
                 # 查询数据库
                 recent_record = TradingRecord.query.filter(
                     TradingRecord.stock_name == name,
@@ -233,7 +233,7 @@ class TrainModel:
                 #     print('no result')
                 if recent_record:
                     self.logger.info(f"Message for {name}-{action} was already sent in the last 5 minutes. Skipping...")
-                    # self.send_message_to_dingding(name, "INFO", date_time_obj.strftime("%H:%M"))
+                    self.send_message_to_dingding(name, "INFO", date_time_obj.strftime("%H:%M"))
                     return None, None
                 self.send_message_to_dingding(name, action, date_time_obj.strftime("%H:%M"))
                 time.sleep(0.1)
@@ -306,7 +306,7 @@ class TrainModel:
         if action == "ON_LINE":
             action_text = "online"
         if action == "INFO":
-            action_text = "5分钟内已经提醒过"
+            action_text = "2分钟内已经提醒过"
 
         data = {
             "text": f"{time} {name}提示{action_text}"
