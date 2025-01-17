@@ -233,7 +233,7 @@ class TrainModel:
                 #     print('no result')
                 if recent_record:
                     self.logger.info(f"Message for {name}-{action} was already sent in the last 5 minutes. Skipping...")
-                    self.send_message_to_dingding(name, "INFO", date_time_obj.strftime("%H:%M"))
+                    # self.send_message_to_dingding(name, "INFO", date_time_obj.strftime("%H:%M"))
                     return None, None
                 self.send_message_to_dingding(name, action, date_time_obj.strftime("%H:%M"))
                 time.sleep(0.1)

@@ -164,6 +164,7 @@ class XtTraderOrder:
     def get_stock_position_pct(self, code):
         total_asset = self.get_total_asset()
         df = self.positions_df()
+        print(df)
         stock_row = df[df["证券代码"] == code]
         if not stock_row.empty:
             stock_value = stock_row["持仓市值"].iloc[0]
