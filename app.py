@@ -157,7 +157,7 @@ def sell_point_playback(name):
         data_count = max(clock.count, 20)
         data_count = min(data_count, train_model.MAX_SELL_PERIOD)
         df = train_model.get_time_series_data('%s.csv' % stock_code, time, data_count)
-        sell_point, _ = train_model.code_trade_point_use_date(df, name, False, train_model.SELL_POINT, code)
+        sell_point, _ = train_model.code_trade_point_use_date(df, name, False, train_model.SELL_POINT)
         if sell_point is not None:
             sell_points.append(sell_point)
         time = clock.next()
@@ -270,7 +270,7 @@ def monitor_stocks():
                 train_model.send_message_to_dingding("监控程序在线中", "ON_LINE", "00:00")
             if '09:32' <= current_time_str < '11:30' or '13:01' <= current_time_str < '15:00':
                 second = current_time1.second
-                if second != 5:
+                if second != 1:
                     time.sleep(0.8)
                     continue
                 market_data.get_all_market_info()
