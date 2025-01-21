@@ -109,14 +109,14 @@ class XtTraderPositionManager:
 
         if latest_record and latest_record.profit_rate < -3:
             # 如果单次亏损超过 3%
-            return 0.3  # 仓位调整为 3 层
+            return 0.4  # 仓位调整为 3 层
 
         # 如果连续亏损 3 笔以上，禁止买入（仓位为 0）
         if self.has_consecutive_losses(num_losses=3):
             return 0.0
         # 如果连续亏损 2 笔以上，禁止买入（仓位为 0）
         if self.has_consecutive_losses(num_losses=2):
-            return 0.5
+            return 0.6
 
         # 检查最近一个月的累计收益
         today = datetime.now()
@@ -124,10 +124,10 @@ class XtTraderPositionManager:
 
         # 如果累计收益率亏损超过 5%，设置仓位为 3 层
         if monthly_profit < -5:
-            return 0.3
+            return 0.4
 
         # 默认仓位为全仓
-        return 0.7
+        return 0.8
 
     def has_consecutive_losses(self, num_losses=3):
         """

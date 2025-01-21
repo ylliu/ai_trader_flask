@@ -147,6 +147,7 @@ class XtTraderOrder:
                 f'position:{self.get_position_pct()} is over 70 or bigger than allowed pos:{XtTraderPositionManager().allowed_positions() * 100},not allowed to buy,buy code:{code},number:{100},price:{price}')
             return False
         number = 100
+        price = price * (1 + self.slippage_percent)
         if price * 100 > cash:
             self.logger.info(f'no enough cash,buy code:{code},number:{number},price:{price}')
             return False
