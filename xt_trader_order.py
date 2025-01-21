@@ -31,6 +31,7 @@ class MyHoldings:
 
 class XtTraderOrder:
     def __init__(self):
+        self.slippage_percent = 0.001
         # 设置日志
         self.logger = get_logger('xt_trader', True)
         self.logger.info('init_xt_trader')
@@ -148,7 +149,7 @@ class XtTraderOrder:
         return True
 
     def sell_stock(self, code, number, price):
-
+        price = round(price * (1 - self.slippage_percent), 2)
         self.logger.info(f'sell code:{code},number:{number},price:{price}')
         self.xt_trader.order_stock(self.ID, code, xtconstant.STOCK_SELL, number, xtconstant.FIX_PRICE, price)
 

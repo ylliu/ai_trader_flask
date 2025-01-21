@@ -276,8 +276,8 @@ def monitor_stocks():
                 market_data.get_all_market_info()
                 train_model.set_buy_threshold(market_data.calc_buy_threshold())
                 train_model.set_sell_threshold(market_data.calc_sell_threshold())
-                print('buy:', market_data.calc_sell_threshold())
-                print('buy:', market_data.calc_sell_threshold())
+                print('buy:', market_data.calc_buy_threshold())
+                print('sell:', market_data.calc_sell_threshold())
                 minute = current_time1.minute
                 if minute % 20 == 0:
                     train_model.send_message_to_dingding("监控程序在线中", "ON_LINE", "00:00")
