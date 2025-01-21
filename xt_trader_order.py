@@ -148,9 +148,13 @@ class XtTraderOrder:
             return False
         number = 100
         price = price * (1 + self.slippage_percent)
-        if price * 100 > cash:
-            self.logger.info(f'no enough cash,buy code:{code},number:{number},price:{price}')
-            return False
+        number = self.get_mini_number(number, price)
+        # buy 100 when money is not enough
+        if price * number > cash:
+            number = 100
+            if price * number > cash:
+                self.logger.info(f'no enough cash,buy code:{code},number:{number},price:{price}')
+                return False
         self.logger.info(f'buy code:{code},number:{number},price:{price}')
         self.xt_trader.order_stock(self.ID, code, xtconstant.STOCK_BUY, number, xtconstant.FIX_PRICE, price)
         return True
@@ -189,6 +193,33 @@ class XtTraderOrder:
             return stock_number
         else:
             return 0
+
+    def adjust_number(self, mini_asset, price):
+        # 计算初始的 number
+        number = (round(mini_asset / price) // 100) * 100
+        # 计算向上调整后的 number
+        number_ceil = ((round(mini_asset / price) // 100 + 1) * 100)
+        # 计算向下调整后的 number
+        number_floor = ((round(mini_asset / price) // 100 - 1) * 100)
+        # 计算初始差值
+        diff_initial = abs(mini_asset - number * price)
+        # 计算向上调整后的差值
+        diff_ceil = abs(mini_asset - number_ceil * price)
+        # 计算向下调整后的差值
+        diff_floor = abs(mini_asset - number_floor * price)
+        # 找出差值最小的 number
+        if diff_ceil < diff_initial and diff_ceil < diff_floor:
+            return number_ceil
+        elif diff_floor < diff_initial:
+            return number_floor
+        else:
+            return number
+
+    def get_mini_number(self, number, price):
+        mini_asset = 5000
+        if number * price < mini_asset:
+            return self.adjust_number(mini_asset, price)
+        return 100
 #     # ——————————————————————————————————————————————————————————————————————————————————————————————————————
 #
 #

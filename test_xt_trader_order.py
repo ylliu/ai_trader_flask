@@ -47,3 +47,10 @@ class TestXtTraderOrder(TestCase):
         xt_trader_order = XtTraderOrder()
         number = xt_trader_order.get_stock_position_number('300058.SZ')
         self.assertEqual(600, number)
+
+    def test_get_mini_number(self):
+        xt_trader_order = XtTraderOrder()
+        res = xt_trader_order.get_mini_number(100, 6.0)
+        self.assertEqual(res, 800)
+        res = xt_trader_order.get_mini_number(100, 28.0)
+        self.assertEqual(res, 200)
