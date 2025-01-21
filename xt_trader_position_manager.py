@@ -155,3 +155,6 @@ class XtTraderPositionManager:
         """
         self.session.query(AccountProfitRate).delete()
         self.session.commit()
+
+    def single_stock_position_with_allowed_position(self, single_position):
+        return float(single_position * self.allowed_positions())

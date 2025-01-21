@@ -78,3 +78,7 @@ class TestXtTraderPositionManager(TestCase):
         # 确认表中无数据
         records_after_clear = self.xt_trader.session.query(AccountProfitRate).all()
         self.assertEqual(len(records_after_clear), 0)  # 确认记录被清除
+
+    def test_single_stock_position_with_allowed_position(self):
+        res = self.xt_trader.single_stock_position_with_allowed_position(20)
+        self.assertEqual(res, 14)

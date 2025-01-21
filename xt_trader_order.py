@@ -136,6 +136,12 @@ class XtTraderOrder:
             self.logger.info(
                 f'single code position:{self.get_stock_position_pct(code)} is over 20,not allowed to buy,buy code:{code},number:{100},price:{price}')
             return False
+        # 单票的仓位跟允许的仓位比例匹配
+        stock_position = XtTraderPositionManager().single_stock_position_with_allowed_position(20)
+        if self.get_stock_position_pct(code) > stock_position:
+            self.logger.info(
+                f'single code position:{self.get_stock_position_pct(code)} is over than position with allowed{stock_position},not allowed to buy,buy code:{code},number:{100},price:{price}')
+            return False
         if self.get_position_pct() > 70 or self.get_position_pct() > XtTraderPositionManager().allowed_positions() * 100:
             self.logger.info(
                 f'position:{self.get_position_pct()} is over 70 or bigger than allowed pos:{XtTraderPositionManager().allowed_positions() * 100},not allowed to buy,buy code:{code},number:{100},price:{price}')
