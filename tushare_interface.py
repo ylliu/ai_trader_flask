@@ -599,3 +599,9 @@ class TushareInterface(DataInterfaceBase):
     def get_pre_close(self, code):
         daily_line = self.gat_realtime_data(code)
         return daily_line.average_price
+
+    def get_current_pct(self, code):
+        daily_line = self.gat_realtime_data(code)
+        print(daily_line)
+        pct = round((daily_line.close - daily_line.average_price) / daily_line.close * 100, 2)
+        return pct

@@ -14,3 +14,8 @@ class TestTushareInterface(TestCase):
         self.assertEqual('300001.SZ', code)
         code = tushare_interface.convert_stock_code_to_dot_s('sh600001')
         self.assertEqual('600001.SH', code)
+
+    def test_get_current_pct(self):
+        tushare_interface = TushareInterface()
+        pct = tushare_interface.get_current_pct('300001.SZ')
+        self.assertEqual(pct, 1)

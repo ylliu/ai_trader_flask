@@ -268,7 +268,7 @@ def monitor_stocks():
             current_time = current_time.replace(second=0, microsecond=0)
             if '09:00' <= current_time_str < '09:01':
                 train_model.send_message_to_dingding("监控程序在线中", "ON_LINE", "00:00")
-            if '09:32' <= current_time_str < '11:30' or '13:01' <= current_time_str < '15:00':
+            if '09:30' <= current_time_str < '11:30' or '13:01' <= current_time_str < '15:00':
                 second = current_time1.second
                 if second != 1:
                     time.sleep(0.8)
@@ -313,7 +313,12 @@ def monitor_my_holding_stocks_sell_point(current_time, train_model):
         to_sell_price = df_sell['Price'].iloc[-1]
         sell_point, sell_record = train_model.code_trade_point_use_date(df_sell, stock_name, True,
                                                                         train_model.SELL_POINT)
+
         if sell_point is not None:
+            if '09:32' >= current_time >= '09:30':
+                current_pct = tushare_interface.get_current_pct(stock.code)
+                if current_pct < 3:  # 避免早上直接卖飞了 但是如果涨幅大也直接卖掉
+                    return
             converted_code = TushareInterface().convert_stock_code_to_dot_s(stock_code)
             number = xt_trader_order.get_stock_position_number(converted_code)
             # sell_number = number / 2
