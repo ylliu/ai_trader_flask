@@ -54,3 +54,19 @@ class TestXtTraderOrder(TestCase):
         self.assertEqual(res, 800)
         res = xt_trader_order.get_mini_number(100, 28.0)
         self.assertEqual(res, 200)
+
+    def test_get_mini_sell_number(self):
+        xt_trader_order = XtTraderOrder()
+        res = xt_trader_order.get_mini_sell_number(100, 6.0)
+        self.assertEqual(res, 500)
+        res = xt_trader_order.get_mini_sell_number(100, 40.0)
+        self.assertEqual(res, 100)
+        res = xt_trader_order.get_mini_sell_number(100, 29.0)
+        self.assertEqual(res, 100)
+
+    def test_get_available_holdings(self):
+        xt_trader_order = XtTraderOrder()
+        res = xt_trader_order.get_available_holdings()
+        for stock in res:
+            print(stock.code)
+            print(stock.available_number)

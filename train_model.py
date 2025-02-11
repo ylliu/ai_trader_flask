@@ -222,7 +222,7 @@ class TrainModel:
                 date_time_obj = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S")
                 # 提取时分信息
                 five_minutes_ago = datetime.strptime(data_test['time'].iloc[-1], "%Y-%m-%d %H:%M:%S") - timedelta(
-                    minutes=4)
+                    minutes=3)
                 # 查询数据库
                 recent_record = TradingRecord.query.filter(
                     TradingRecord.stock_name == name,

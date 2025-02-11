@@ -17,8 +17,8 @@ class Test(TestCase):
     def test_grid_strategy_should_sell_when_price_down(self):
         grid_strategy = GridStrategy()
         train_model = TrainModel()
-        train_model.save_data2('sz301536', 241)
-        expect_sell_time = grid_strategy.simulate_grid_trading_from_csv('sz301536.csv', '13:27', 'sell')
+        train_model.save_data2('sz000063', 241)
+        expect_sell_time = grid_strategy.simulate_grid_trading_from_csv('sz000063.csv', '13:27', 'sell')
         self.assertEqual('14:24', expect_sell_time)
 
     def test_realtime_grid_trading_from_csv(self):

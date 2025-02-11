@@ -24,9 +24,10 @@ current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
 
 class MyHoldings:
-    def __init__(self, code, cost_price):
+    def __init__(self, code, cost_price, available_number):
         self.code = code
         self.cost_price = cost_price
+        self.available_number = available_number
 
 
 class XtTraderOrder:
@@ -128,7 +129,8 @@ class XtTraderOrder:
         # print(df)
         available_positions = df[df['可用数量'] != 0]
         # 创建 MyHoldings 实例列表
-        holdings_list = [MyHoldings(row['证券代码'], row['开仓价格']) for _, row in available_positions.iterrows()]
+        holdings_list = [MyHoldings(row['证券代码'], row['开仓价格'], row['可用数量']) for _, row in
+                         available_positions.iterrows()]
         return holdings_list
 
     def buy_stock(self, code, price, cash):
@@ -159,10 +161,12 @@ class XtTraderOrder:
         self.xt_trader.order_stock(self.ID, code, xtconstant.STOCK_BUY, number, xtconstant.FIX_PRICE, price)
         return True
 
-    def sell_stock(self, code, number, price):
+    def sell_stock(self, code, available_number, price):
         price = round(price * (1 - self.slippage_percent), 2)
-        self.logger.info(f'sell code:{code},number:{number},price:{price}')
-        self.xt_trader.order_stock(self.ID, code, xtconstant.STOCK_SELL, number, xtconstant.FIX_PRICE, price)
+        to_sell_number = self.get_mini_sell_number(price)
+        sell_number = min(to_sell_number, available_number)
+        self.logger.info(f'sell code:{code},number:{sell_number},price:{price}')
+        self.xt_trader.order_stock(self.ID, code, xtconstant.STOCK_SELL, sell_number, xtconstant.FIX_PRICE, price)
 
     def get_position_pct(self):
         df = self.positions_df()
@@ -220,6 +224,11 @@ class XtTraderOrder:
         if number * price < mini_asset:
             return self.adjust_number(mini_asset, price)
         return 100
+
+    def get_mini_sell_number(self, price):
+        mini_asset = 3000
+        return self.adjust_number(mini_asset, price)
+
 #     # ——————————————————————————————————————————————————————————————————————————————————————————————————————
 #
 #

@@ -283,8 +283,8 @@ def monitor_stocks():
                     train_model.send_message_to_dingding("监控程序在线中", "ON_LINE", "00:00")
                 if minute % 5 == 0:
                     monitor_holdings_stocks(current_time, train_model)
-                monitor_selected_stocks_buy_point(current_time, train_model)
                 monitor_my_holding_stocks_sell_point(current_time, train_model)
+                monitor_selected_stocks_buy_point(current_time, train_model)
 
                 end_time = time.time()
                 cost = end_time - start_time
@@ -315,14 +315,14 @@ def monitor_my_holding_stocks_sell_point(current_time, train_model):
                                                                         train_model.SELL_POINT)
 
         if sell_point is not None:
-            if '09:32' >= current_time >= '09:30':
+            current_time_str = current_time.strftime('%H:%M')
+            if '09:32' >= current_time_str >= '09:30':
                 current_pct = tushare_interface.get_current_pct(stock.code)
                 if current_pct < 3:  # 避免早上直接卖飞了 但是如果涨幅大也直接卖掉
                     return
             converted_code = TushareInterface().convert_stock_code_to_dot_s(stock_code)
-            number = xt_trader_order.get_stock_position_number(converted_code)
-            # sell_number = number / 2
-            xt_trader_order.sell_stock(converted_code, 100, to_sell_price)
+            available_number = stock.available_number
+            xt_trader_order.sell_stock(converted_code, available_number, to_sell_price)
         insert_trade_record(sell_record)
 
 
@@ -374,10 +374,8 @@ def monitor_holdings_stocks(current_time, train_model):
             insert_stock_name = stock_name + "进入6%止损区间"
             converted_code = TushareInterface().convert_stock_code_to_dot_s(stock.code)
             print('sell:', converted_code)
-            number = xt_trader_order.get_stock_position_number(converted_code)
-            # sell_number = number / 2
-            sell_number = 100
-            xt_trader_order.sell_stock(converted_code, sell_number, current_price)
+            available_number = stock.available_number
+            xt_trader_order.sell_stock(converted_code, available_number, current_price)
             train_model.send_message_to_dingding(insert_stock_name, train_model.SELL_POINT, current_time)
             time.sleep(0.1)
         # 在这里添加监控逻辑
