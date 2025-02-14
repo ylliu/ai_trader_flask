@@ -126,7 +126,7 @@ class XtTraderOrder:
     def get_available_holdings(self):
 
         df = self.positions_df()
-        # print(df)
+        print(df)
         available_positions = df[df['可用数量'] != 0]
         # 创建 MyHoldings 实例列表
         holdings_list = [MyHoldings(row['证券代码'], row['开仓价格'], row['可用数量']) for _, row in
@@ -170,7 +170,7 @@ class XtTraderOrder:
 
     def get_position_pct(self):
         df = self.positions_df()
-        print(df)
+        # print(df)
         non_zero_positions = df[df['持仓数量'] != 0]
         # 将持仓市值进行相加
         total_market_value = non_zero_positions['持仓市值'].sum()
@@ -228,6 +228,14 @@ class XtTraderOrder:
     def get_mini_sell_number(self, price):
         mini_asset = 3000
         return max(self.adjust_number(mini_asset, price), 100)
+
+    def get_open_price(self, code):
+        df = self.positions_df()
+        result = df[df['证券代码'] == code]['开仓价格']
+        if not result.empty:
+            return round(result.values[0], 2)
+        else:
+            return None
 
 #     # ——————————————————————————————————————————————————————————————————————————————————————————————————————
 #

@@ -206,7 +206,7 @@ class TrainModel:
             prob_pred = self.loaded_sell_model.predict_proba(X_test)  # 获取预测概率
 
         # 假设是二分类问题，prob_pred[:, 1] 是类别1的预测概率
-
+        smoothed_prob = prob_pred[-5:, 1].mean()
         custom_pred = (prob_pred[:, 1] >= threshold).astype(int)  # 根据阈值决定类别
         time_str = data_test['time'].iloc[-1]
         print(time_str)
@@ -215,26 +215,27 @@ class TrainModel:
         self.logger.info(f'data:{data_input}')
         if custom_pred[-1] == 1:
             # print(prob_pred)
+            print('smoothed_prob:', smoothed_prob)
             if is_send_message is True:
                 # 解析日期时间字符串
 
                 date_time_str = data_test['time'].iloc[-1]
                 date_time_obj = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S")
-                # 提取时分信息
-                five_minutes_ago = datetime.strptime(data_test['time'].iloc[-1], "%Y-%m-%d %H:%M:%S") - timedelta(
-                    minutes=3)
-                # 查询数据库
-                recent_record = TradingRecord.query.filter(
-                    TradingRecord.stock_name == name,
-                    TradingRecord.direction == action,
-                    TradingRecord.timestamp >= five_minutes_ago
-                ).first()
-                # if recent_record is None:
-                #     print('no result')
-                if recent_record:
-                    self.logger.info(f"Message for {name}-{action} was already sent in the last 5 minutes. Skipping...")
-                    self.send_message_to_dingding(name, "INFO", date_time_obj.strftime("%H:%M"))
-                    return None, None
+                # # 提取时分信息
+                # five_minutes_ago = datetime.strptime(data_test['time'].iloc[-1], "%Y-%m-%d %H:%M:%S") - timedelta(
+                #     minutes=3)
+                # # 查询数据库
+                # recent_record = TradingRecord.query.filter(
+                #     TradingRecord.stock_name == name,
+                #     TradingRecord.direction == action,
+                #     TradingRecord.timestamp >= five_minutes_ago
+                # ).first()
+                # # if recent_record is None:
+                # #     print('no result')
+                # if recent_record:
+                #     self.logger.info(f"Message for {name}-{action} was already sent in the last 5 minutes. Skipping...")
+                #     self.send_message_to_dingding(name, "INFO", date_time_obj.strftime("%H:%M"))
+                #     return None, None
                 self.send_message_to_dingding(name, action, date_time_obj.strftime("%H:%M"))
                 time.sleep(0.1)
             # print('code:', code)
@@ -246,7 +247,7 @@ class TrainModel:
             print(trade_points[['time', point]].reset_index())
             new_record = TraderRecord(name, action, data_test['Close'].iloc[-1],
                                       datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S'))
-            return data_test['time'].iloc[-1], new_record
+            return data_test['time'].iloc[-1], new_record, smoothed_prob
         return None, None
 
     def save_data(self, code, sell_start, sell_end, action_type):

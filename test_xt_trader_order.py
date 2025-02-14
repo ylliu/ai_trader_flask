@@ -70,3 +70,8 @@ class TestXtTraderOrder(TestCase):
         for stock in res:
             print(stock.code)
             print(stock.available_number)
+
+    def test_get_open_price(self):
+        xt_trader_order = XtTraderOrder()
+        res = xt_trader_order.get_open_price('002639.SZ')
+        print(res)
