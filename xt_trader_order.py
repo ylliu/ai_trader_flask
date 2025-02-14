@@ -134,7 +134,7 @@ class XtTraderOrder:
         return holdings_list
 
     def buy_stock(self, code, price, cash):
-        if self.get_stock_position_pct(code) > 20:
+        if self.get_stock_position_pct(code) > 16:
             self.logger.info(
                 f'single code position:{self.get_stock_position_pct(code)} is over 20,not allowed to buy,buy code:{code},number:{100},price:{price}')
             return False
@@ -220,14 +220,14 @@ class XtTraderOrder:
             return number
 
     def get_mini_number(self, number, price):
-        mini_asset = 5000
+        mini_asset = 3500
         if number * price < mini_asset:
             return self.adjust_number(mini_asset, price)
         return 100
 
     def get_mini_sell_number(self, price):
         mini_asset = 3000
-        return self.adjust_number(mini_asset, price)
+        return max(self.adjust_number(mini_asset, price), 100)
 
 #     # ——————————————————————————————————————————————————————————————————————————————————————————————————————
 #
