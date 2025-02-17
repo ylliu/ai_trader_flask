@@ -248,7 +248,7 @@ class TrainModel:
             new_record = TraderRecord(name, action, data_test['Close'].iloc[-1],
                                       datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S'))
             return data_test['time'].iloc[-1], new_record, smoothed_prob
-        return None, None
+        return None, None, None
 
     def save_data(self, code, sell_start, sell_end, action_type):
         sell_start = datetime.strptime(sell_start, '%Y-%m-%d %H:%M:%S')

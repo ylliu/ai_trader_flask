@@ -314,13 +314,13 @@ def monitor_my_holding_stocks_sell_point(current_time, train_model):
         sell_point, sell_record, smoothed_prob = train_model.code_trade_point_use_date(df_sell, stock_name, True,
                                                                                        train_model.SELL_POINT)
         converted_code = TushareInterface().convert_stock_code_to_dot_s(stock_code)
-        open_price = xt_trader_order.get_open_price(converted_code)
-        if open_price < to_sell_price:  # 盈利 思想 就是如果亏的就卖敏感点，挣的就慢点卖
-            if smoothed_prob < train_model.SELL_POINT_THRESHOLD:
-                print(
-                    f'the stock{converted_code} is profitable,wait a moment to sell,smoothed_prob:{smoothed_prob},threshold:{train_model.SELL_POINT_THRESHOLD}')
-                return
         if sell_point is not None:
+            open_price = xt_trader_order.get_open_price(converted_code)
+            if open_price < to_sell_price:  # 盈利 思想 就是如果亏的就卖敏感点，挣的就慢点卖
+                if smoothed_prob < train_model.SELL_POINT_THRESHOLD:
+                    print(
+                        f'the stock{converted_code} is profitable,wait a moment to sell,smoothed_prob:{smoothed_prob},threshold:{train_model.SELL_POINT_THRESHOLD}')
+                    return
             current_time_str = current_time.strftime('%H:%M')
             if '09:32' >= current_time_str >= '09:30':
                 current_pct = tushare_interface.get_current_pct(stock.code)

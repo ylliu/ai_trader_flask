@@ -18,3 +18,9 @@ class TestMarketData(TestCase):
         market_data = MarketData()
         count = market_data.get_down_data()
         self.assertEqual(2, count)
+
+    def test_count_positive_change(self):
+        market_data = MarketData()
+        market_data.get_all_market_info()
+        res = market_data.count_positive_change()
+        print(res)
