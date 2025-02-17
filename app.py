@@ -273,7 +273,6 @@ def monitor_stocks():
                 if second != 1:
                     time.sleep(0.8)
                     continue
-                market_data.get_all_market_info()
                 train_model.set_buy_threshold(market_data.calc_buy_threshold())
                 train_model.set_sell_threshold(market_data.calc_sell_threshold())
                 print('buy:', market_data.calc_buy_threshold())
