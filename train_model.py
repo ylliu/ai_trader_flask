@@ -206,12 +206,12 @@ class TrainModel:
             prob_pred = self.loaded_sell_model.predict_proba(X_test)  # 获取预测概率
 
         # 假设是二分类问题，prob_pred[:, 1] 是类别1的预测概率
-        smoothed_prob = prob_pred[-5:, 1].mean()
+        smoothed_prob = prob_pred[-3:, 1].mean()
         custom_pred = (prob_pred[:, 1] >= threshold).astype(int)  # 根据阈值决定类别
         time_str = data_test['time'].iloc[-1]
         print(time_str)
         print(prob_pred[-1])
-        self.logger.info(f'time:{time_str},pred:{prob_pred[-1]}')
+        self.logger.info(f'time:{time_str},pred:{prob_pred[-1]},smoothed_prob:{smoothed_prob}')
         self.logger.info(f'data:{data_input}')
         if custom_pred[-1] == 1:
             # print(prob_pred)
