@@ -31,8 +31,8 @@ class TrainModel:
         self.loaded_sell_model = None
         self.loaded_buy_model = None
         self.sell_model_file = None
-        self.sell_features = ['Price', 'Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change', 'rsi', 'volume_ma5',
-                              'vwap']
+        self.sell_features = ['Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change', 'rsi', 'volume_ma5',
+                              'vwap','distance']
         self.buy_features = ['Price', 'Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change', 'rsi']
         self.BUY_POINT = "Buy_Point"
         self.SELL_POINT = "Sell_Point"
@@ -128,6 +128,13 @@ class TrainModel:
         data['rsi'] = self.calculate_rsi(data['Price'], 14).fillna(0)
         data['volume_ma5'] = data['Volume'].rolling(window=5).mean()
         data['vwap'] = (data['Price'] * data['Volume']).cumsum() / data['Volume'].cumsum()
+        data['mean'] = data['Close'].mean()
+
+        # 计算距离比例
+        data['distance'] = (data['Close'] - data['mean']) / data['mean']
+        # 对 'distance' 列进行归一化
+        scaler = MinMaxScaler(feature_range=(0, 1))
+        data['distance'] = scaler.fit_transform(data[['distance']])
         # 去除空值
         # print(data)
         data.dropna(inplace=True)
@@ -206,7 +213,7 @@ class TrainModel:
             prob_pred = self.loaded_sell_model.predict_proba(X_test)  # 获取预测概率
 
         # 假设是二分类问题，prob_pred[:, 1] 是类别1的预测概率
-        smoothed_prob = prob_pred[-3:, 1].mean()
+        smoothed_prob = prob_pred[-4:, 1].mean()
         custom_pred = (prob_pred[:, 1] >= threshold).astype(int)  # 根据阈值决定类别
         time_str = data_test['time'].iloc[-1]
         print(time_str)
