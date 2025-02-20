@@ -228,7 +228,7 @@ class TrainModel:
         time_str = data_test['time'].iloc[-1]
         print(time_str)
         print(prob_pred[-1])
-        print(prob_pred)
+        # print(prob_pred)
         self.logger.info(f'time:{time_str},pred:{prob_pred[-1]},smoothed_prob:{smoothed_prob}')
         self.logger.info(f'data:{data_input}')
         if custom_pred[-1] == 1:

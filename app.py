@@ -158,8 +158,17 @@ def sell_point_playback(name):
         data_count = min(data_count, train_model.MAX_SELL_PERIOD)
         df = train_model.get_time_series_data('%s.csv' % stock_code, time, data_count)
         sell_point, _, smonth_pres = train_model.code_trade_point_use_date(df, name, False, train_model.SELL_POINT)
+
         if sell_point is not None:
-            if smonth_pres >= train_model.SELL_POINT_SMONTH_THRESHOLD:
+            print(stock_code)
+            code_s = tushare_interface.convert_stock_code_to_dot_s(stock_code)
+            pre_close = tushare_interface.get_pre_close(code_s)
+
+            current_price = df['Close'].iloc[-1]
+            current_pct = round((current_price - pre_close) / pre_close * 100, 2)
+            print(current_pct)
+
+            if smonth_pres >= train_model.SELL_POINT_SMONTH_THRESHOLD and current_pct >= 2:
                 sell_points.append(sell_point)
         time = clock.next()
 
@@ -315,6 +324,16 @@ def monitor_my_holding_stocks_sell_point(current_time, train_model):
                                                                                        train_model.SELL_POINT)
         converted_code = TushareInterface().convert_stock_code_to_dot_s(stock_code)
         if sell_point is not None:
+
+            pre_close = tushare_interface.get_pre_close(converted_code)
+            current_price = df_sell['Close'].iloc[-1]
+            current_pct = round((current_price - pre_close) / pre_close * 100, 2)
+            print(current_pct)
+            if current_pct < 2:
+                print(
+                    f'the stock{converted_code} is profitable,wait a moment to sell,current_pct:{current_pct} is less than 2')
+                return
+
             open_price = xt_trader_order.get_open_price(converted_code)
             if open_price < to_sell_price:  # 盈利 思想 就是如果亏的就卖敏感点，挣的就慢点卖
                 return_pct = round((to_sell_price - open_price) / open_price * 100, 2)
