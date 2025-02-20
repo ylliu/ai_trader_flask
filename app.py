@@ -157,9 +157,10 @@ def sell_point_playback(name):
         data_count = max(clock.count, 20)
         data_count = min(data_count, train_model.MAX_SELL_PERIOD)
         df = train_model.get_time_series_data('%s.csv' % stock_code, time, data_count)
-        sell_point, _, _ = train_model.code_trade_point_use_date(df, name, False, train_model.SELL_POINT)
+        sell_point, _, smonth_pres = train_model.code_trade_point_use_date(df, name, False, train_model.SELL_POINT)
         if sell_point is not None:
-            sell_points.append(sell_point)
+            if smonth_pres >= train_model.SELL_POINT_SMONTH_THRESHOLD:
+                sell_points.append(sell_point)
         time = clock.next()
 
     return jsonify(sell_points)
@@ -316,11 +317,18 @@ def monitor_my_holding_stocks_sell_point(current_time, train_model):
         if sell_point is not None:
             open_price = xt_trader_order.get_open_price(converted_code)
             if open_price < to_sell_price:  # 盈利 思想 就是如果亏的就卖敏感点，挣的就慢点卖
-                if smoothed_prob < train_model.SELL_POINT_THRESHOLD:
+                return_pct = round((to_sell_price - open_price) / open_price * 100, 2)
+                if return_pct < 5:
+                    print(
+                        f'the stock{converted_code} is profitable,wait a moment to sell,return_pct:{return_pct} is less than 5')
+                    return
+
+                if smoothed_prob < train_model.SELL_POINT_SMONTH_THRESHOLD:
                     print(
                         f'the stock{converted_code} is profitable,wait a moment to sell,smoothed_prob:{smoothed_prob},threshold:{train_model.SELL_POINT_THRESHOLD}')
                     return
             current_time_str = current_time.strftime('%H:%M')
+            current_pct = tushare_interface.get_current_pct(stock.code)
             if '09:32' >= current_time_str >= '09:30':
                 current_pct = tushare_interface.get_current_pct(stock.code)
                 if current_pct < 3:  # 避免早上直接卖飞了 但是如果涨幅大也直接卖掉

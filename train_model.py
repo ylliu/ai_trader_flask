@@ -31,7 +31,7 @@ class TrainModel:
         self.loaded_sell_model = None
         self.loaded_buy_model = None
         self.sell_model_file = None
-        self.sell_features = ['Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change', 'rsi', 'volume_ma5',
+        self.sell_features = ['Volume', 'SMA5', 'mean', 'Price_change', 'Volume_change', 'rsi', 'volume_ma5',
                               'vwap','distance']
         self.buy_features = ['Price', 'Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change', 'rsi']
         self.BUY_POINT = "Buy_Point"
@@ -40,6 +40,7 @@ class TrainModel:
         self.create_directories_if_not_exists()
         self.logger = get_logger("ai_trader_data", False)
         self.SELL_POINT_THRESHOLD = 0.64
+        self.SELL_POINT_SMONTH_THRESHOLD = 0.6
         self.BUY_POINT_THRESHOLD = 0.64
         self.MAX_SELL_PERIOD = 80
         self.to_buy_list = []
@@ -211,6 +212,15 @@ class TrainModel:
         elif action == self.SELL_POINT:
             threshold = self.SELL_POINT_THRESHOLD  # 设置你的阈值
             prob_pred = self.loaded_sell_model.predict_proba(X_test)  # 获取预测概率
+            # # 获取特征重要性
+            # feature_importances = self.loaded_sell_model.feature_importances_
+            #
+            # # 创建一个DataFrame来展示特征重要性
+            # feature_names = [f'Feature_{i}' for i in range(len(self.sell_features))]
+            # importance_df = pd.DataFrame({'Feature': feature_names, 'Importance': feature_importances})
+            # importance_df = importance_df.sort_values(by='Importance', ascending=False)
+            #
+            # print(importance_df)
 
         # 假设是二分类问题，prob_pred[:, 1] 是类别1的预测概率
         smoothed_prob = prob_pred[-4:, 1].mean()
@@ -218,6 +228,7 @@ class TrainModel:
         time_str = data_test['time'].iloc[-1]
         print(time_str)
         print(prob_pred[-1])
+        print(prob_pred)
         self.logger.info(f'time:{time_str},pred:{prob_pred[-1]},smoothed_prob:{smoothed_prob}')
         self.logger.info(f'data:{data_input}')
         if custom_pred[-1] == 1:
