@@ -157,7 +157,8 @@ def sell_point_playback(name):
         data_count = max(clock.count, 20)
         data_count = min(data_count, train_model.MAX_SELL_PERIOD)
         df = train_model.get_time_series_data('%s.csv' % stock_code, time, data_count)
-        sell_point, _, smonth_pres = train_model.code_trade_point_use_date(df, name, False, train_model.SELL_POINT)
+        sell_point, _, smonth_pres, trade_size = train_model.code_trade_point_use_date(df, name, False,
+                                                                                       train_model.SELL_POINT)
 
         if sell_point is not None:
             print(stock_code)
@@ -168,7 +169,7 @@ def sell_point_playback(name):
             current_pct = round((current_price - pre_close) / pre_close * 100, 2)
             print(current_pct)
 
-            if smonth_pres >= train_model.SELL_POINT_SMONTH_THRESHOLD and current_pct >= 2:
+            if (smonth_pres >= train_model.SELL_POINT_SMONTH_THRESHOLD or trade_size >= 3) and current_pct >= 2:
                 sell_points.append(sell_point)
         time = clock.next()
 
@@ -192,7 +193,7 @@ def buy_point_playback(name):
     while not clock.is_time_to_end():
         data_count = max(clock.count, 20)
         df = train_model.get_time_series_data('%s.csv' % stock_code, time, data_count)
-        buy_point, _, _ = train_model.code_trade_point_use_date(df, name, False, train_model.BUY_POINT)
+        buy_point, _, _, _ = train_model.code_trade_point_use_date(df, name, False, train_model.BUY_POINT)
         if buy_point is not None:
             buy_points.append(buy_point)
         time = clock.next()
@@ -320,8 +321,9 @@ def monitor_my_holding_stocks_sell_point(current_time, train_model):
         df_sell = train_model.get_time_series_data('%s.csv' % stock_code, current_time,
                                                    data_count_sell)
         to_sell_price = df_sell['Price'].iloc[-1]
-        sell_point, sell_record, smoothed_prob = train_model.code_trade_point_use_date(df_sell, stock_name, True,
-                                                                                       train_model.SELL_POINT)
+        sell_point, sell_record, smoothed_prob, trade_size = train_model.code_trade_point_use_date(df_sell, stock_name,
+                                                                                                   True,
+                                                                                                   train_model.SELL_POINT)
         converted_code = TushareInterface().convert_stock_code_to_dot_s(stock_code)
         if sell_point is not None:
 
@@ -342,7 +344,7 @@ def monitor_my_holding_stocks_sell_point(current_time, train_model):
                         f'the stock{converted_code} is profitable,wait a moment to sell,return_pct:{return_pct} is less than 5')
                     return
 
-                if smoothed_prob < train_model.SELL_POINT_SMONTH_THRESHOLD:
+                if smoothed_prob < train_model.SELL_POINT_SMONTH_THRESHOLD and trade_size < 3:
                     print(
                         f'the stock{converted_code} is profitable,wait a moment to sell,smoothed_prob:{smoothed_prob},threshold:{train_model.SELL_POINT_THRESHOLD}')
                     return
@@ -374,8 +376,9 @@ def monitor_selected_stocks_buy_point(current_time, train_model):
         df_buy = train_model.get_time_series_data('%s.csv' % stock.stock_code, current_time,
                                                   data_count_buy)
         to_buy_price = df_buy['Price'].iloc[-1]
-        buy_point, buy_record, smoothed_prob = train_model.code_trade_point_use_date(df_buy, stock.name, True,
-                                                                                     train_model.BUY_POINT)
+        buy_point, buy_record, smoothed_prob, trade_size = train_model.code_trade_point_use_date(df_buy, stock.name,
+                                                                                                 True,
+                                                                                                 train_model.BUY_POINT)
         if buy_point is not None:
             converted_code = TushareInterface().convert_stock_code_to_dot_s(stock.stock_code)
             xt_trader_order.buy_stock(converted_code, to_buy_price, xt_trader_order.get_cash())

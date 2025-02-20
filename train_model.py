@@ -32,7 +32,7 @@ class TrainModel:
         self.loaded_buy_model = None
         self.sell_model_file = None
         self.sell_features = ['Volume', 'SMA5', 'mean', 'Price_change', 'Volume_change', 'rsi', 'volume_ma5',
-                              'vwap','distance']
+                              'vwap', 'distance']
         self.buy_features = ['Price', 'Volume', 'SMA5', 'SMA10', 'Price_change', 'Volume_change', 'rsi']
         self.BUY_POINT = "Buy_Point"
         self.SELL_POINT = "Sell_Point"
@@ -265,8 +265,8 @@ class TrainModel:
             print(trade_points[['time', point]].reset_index())
             new_record = TraderRecord(name, action, data_test['Close'].iloc[-1],
                                       datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S'))
-            return data_test['time'].iloc[-1], new_record, smoothed_prob
-        return None, None, None
+            return data_test['time'].iloc[-1], new_record, smoothed_prob, len(trade_points)
+        return None, None, None, None
 
     def save_data(self, code, sell_start, sell_end, action_type):
         sell_start = datetime.strptime(sell_start, '%Y-%m-%d %H:%M:%S')
